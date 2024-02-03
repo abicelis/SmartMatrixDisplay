@@ -1,0 +1,83 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+// WiFi
+#define SSID_NAME "wifi_name"
+#define SSID_PASSWORD "wifi_password"
+
+// OCTranspoAPI
+#define MAX_ARRIVAL_TIME_MINUTES 60
+#define OC_TRANSPO_API_NEXT_TRIPS_FOR_STOP_ENDPOINT "https://api.octranspo1.com/v2.0/GetNextTripsForStop?appID=<your_app_id>&apiKey=<your_api_key>"
+// For more info, see: https://www.octranspo.com/en/plan-your-trip/travel-tools/developers/dev-doc#method-GetNextTripsForStop
+
+// OpenMeteoAPI
+#define OPEN_METEO_API_ENDPOINT "https://api.open-meteo.com/v1/forecast?latitude=45.354305&longitude=-75.73605&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,snowfall,weather_code,wind_speed_10m,wind_gusts_10m&daily=weather_code&timeformat=unixtime&timezone=America%2FNew_York&forecast_days=1"
+
+// NTP
+#define NTP_SERVER "pool.ntp.org"
+#define NTP_GMT_OFFSET_SEC -18000
+#define NTP_DAYLIGHT_OFFSET_SEC 3600
+
+// Interval control
+#define INTERVAL_APP_STATE 60000                            // Time in millis to display an App State
+#define INTERVAL_UPDATE_TRACKING_BUS_INDICATOR 700
+#define INTERVAL_UPDATE_LIGHT_SENSOR 2000
+
+// UI - Spacing
+#define SCHEDULE_MAX_TRIPS 4
+#define SCHEDULE_TOP_HEADER_SIZE_PX 15
+#define SCHEDULE_HORIZONTAL_MARGIN_PX 2
+#define SCHEDULE_VERTICAL_SPACING_BETWEEN_BUSES_PX 13
+#define SCHEDULE_BUS_SIGN_WIDTH_PX 22
+#define SCHEDULE_BUS_SIGN_AND_BUS_LABEL_MARGIN_PX 4
+
+#define SCHEDULE_BUS_MINUTE_SYMBOL_AND_ARRIVAL_TIME_MARGIN_PX 1
+// #define SCHEDULE_BUS_ARRIVAL_TIME_AND_TRACKING_INDICATOR_MARGIN_PX 4
+#define SCHEDULE_BUS_ARRIVAL_TIME_AND_TRACKING_INDICATOR_MARGIN_PX 16
+
+#define SCHEDULE_TITLE_X_POSITION 2
+#define SCHEDULE_TITLE_Y_POSITION 2
+
+#define SCHEDULE_BUS_CLOCK_X_POSITION 97
+#define SCHEDULE_BUS_CLOCK_Y_POSITION 2
+
+// Display
+#define R1_PIN 25
+#define G1_PIN 26
+#define B1_PIN 27
+#define R2_PIN 14
+#define G2_PIN 12
+#define B2_PIN 13
+#define A_PIN 23
+#define B_PIN 19
+#define C_PIN 5
+#define D_PIN 17
+#define E_PIN 18 // required for 1/32 scan panels, like 64x64. Any available pin would do, i.e. IO32
+#define LAT_PIN 4
+#define OE_PIN 15
+#define CLK_PIN 16
+#define PANEL_RES_X 128 // Number of pixels wide of each INDIVIDUAL panel module.
+#define PANEL_RES_Y 64  // Number of pixels tall of each INDIVIDUAL panel module.
+#define PANEL_CHAIN 1   // Total number of panels chained one to another
+
+// Memory - Change these only if you know what you're doing
+#define STACK_DPETH_TRIPS_TASK 50000
+
+// Colors
+#define COLOR_TEXT_PRIMARY_R 191
+#define COLOR_TEXT_PRIMARY_G 178
+#define COLOR_TEXT_PRIMARY_B 155
+
+#define COLOR_TEXT_ROUTE_R 255
+#define COLOR_TEXT_ROUTE_G 255
+#define COLOR_TEXT_ROUTE_B 255
+
+#define COLOR_ROUTE_FREQUENT_R 222
+#define COLOR_ROUTE_FREQUENT_G 81
+#define COLOR_ROUTE_FREQUENT_B 33
+
+#define COLOR_ROUTE_LOCAL_R 60
+#define COLOR_ROUTE_LOCAL_G 60
+#define COLOR_ROUTE_LOCAL_B 60
+
+#endif
