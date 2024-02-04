@@ -2,7 +2,9 @@
 #include <string.h>
 #include <ctime>
 #include <Model.h>
+#include <Config.h>
 #include "util.h"
+
 int currentHourOfDay() {
     time_t now;
     time(&now);
@@ -34,21 +36,23 @@ void printTrips(const TripsData& trips) {
     }
 }
 
-void updateAppState(AppState& appState) {
+void updateAppState(AppState& appState, uint16_t lightSensorValue) {
     int hourOfDay = currentHourOfDay();
-    bool vickyCommute = hourOfDay == 6 || hourOfDay == 7;
-    bool sleeping = hourOfDay >= 20 || hourOfDay <= 5;
+    bool vickyCommute = hourOfDay == APPSTATE_VICKY_COMMUTE_HOUR_START || hourOfDay == APPSTATE_VICKY_COMMUTE_HOUR_END;
+    bool sleeping = hourOfDay >= APPSTATE_SLEEPING_HOUR_START || hourOfDay <= APPSTATE_SLEEPING_HOUR_END;
+    // bool sleeping = false;
 
-    Serial.println("Hour of day " + String(hourOfDay) + ". Sleeping=" + String(sleeping) + " VCommute="+String(vickyCommute));
+    Serial.println("Hour of day=" + String(hourOfDay) + ", Sleeping=" 
+        + String(sleeping) + ", VCommute=" + String(vickyCommute) + ", LightSensor=" + String(lightSensorValue));
 
-    if(sleeping) {
-        appState = Sleeping;
-    } else if(vickyCommute) {
+    if(vickyCommute) {
         if(appState == Weather) {
             appState = RoutesVickyCommute;
-        } else  {
+        } else {
             appState = Weather;
         }
+    } else if(sleeping || lightSensorValue <= APPSTATE_SLEEPING_LIGHT_SENSOR_VALUE_TRESHOLD) {
+        appState = Sleeping;
     } else {
         if (appState == Weather) {
             appState = RoutesNorthSouth;
@@ -69,4 +73,22 @@ TripsType appStateToTripsType(AppState appState) {
         tripsType = EastWest;
 
     return tripsType;
+}
+
+/**
+ * Returns a value that's in the range DISPLAY_BRIGHTNESS_MIN - DISPLAY_BRIGHTNESS_MAX
+ *  - Return DISPLAY_BRIGHTNESS_MIN for any value < LIGHT_SENSOR_VALUE_MIN
+ *  - Return DISPLAY_BRIGHTNESS_MAX for any value > LIGHT_SENSOR_VALUE_MAX
+ *  - Map a value in between DISPLAY_BRIGHTNESS_MIN and DISPLAY_BRIGHTNESS_MAX for light sensor values in between
+ *    In incremental steps based on DISPLAY_BRIGHTNESS_STEPS
+*/
+int8_t lightSensorToDisplayBrightness(uint16_t lightSensorValue) {
+    if(lightSensorValue < LIGHT_SENSOR_VALUE_MIN) {
+        return DISPLAY_BRIGHTNESS_MIN;
+    } else if(lightSensorValue > LIGHT_SENSOR_VALUE_MAX) {
+        return DISPLAY_BRIGHTNESS_MAX;
+    } else {
+        uint8_t mappedValue = map(lightSensorValue, LIGHT_SENSOR_VALUE_MIN, LIGHT_SENSOR_VALUE_MAX, 1, DISPLAY_BRIGHTNESS_STEPS);
+        return DISPLAY_BRIGHTNESS_MIN + ((float)mappedValue/DISPLAY_BRIGHTNESS_STEPS) * (DISPLAY_BRIGHTNESS_MAX - DISPLAY_BRIGHTNESS_MIN);
+    }    
 }

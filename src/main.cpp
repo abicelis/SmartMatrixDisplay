@@ -18,13 +18,14 @@ MatrixDisplay display;
 OCTranspoAPI octranspoAPI(&wifiClient, &httpClient);
 OpenMeteoAPI openMeteoAPI(&wifiClient, &httpClient);
 
-AppState appState = Weather;
-unsigned int lightSensorValue = 0;
-unsigned long currentMillis = 0;
-unsigned long previousAppStateChangeMillis = 0;
-unsigned long previousTrackingBusIndicatorMillis = 0;
-unsigned long previousLightSensorUpdateMillis = 0;
+AppState appState = RoutesEastWest;
+uint16_t lightSensorValue = 0;
+uint16_t currentMillis = 0;
+uint16_t previousAppStateChangeMillis = 0;
+uint16_t previousTrackingBusIndicatorMillis = 0;
+uint16_t previousLightSensorUpdateMillis = 0;
 TaskHandle_t fetchTripsTaskHandle = NULL;
+TaskHandle_t fetchWeatherTaskHandle = NULL;
 
 TripsData newTrips;
 bool newTripsFetched = false;
@@ -37,6 +38,15 @@ void FetchTrips(void *pvParameters) {
     #endif
     
     newTripsFetched = true;
+    vTaskDelete(NULL);
+}
+
+WeatherData newWeather;
+bool newWeatherFetched = false;
+void FetchWeather(void *pvParameters) {
+    Serial.println("FetchWeather task started..");
+    newWeather = openMeteoAPI.fetchCurrentWeather();
+    newWeatherFetched = true;
     vTaskDelete(NULL);
 }
 
@@ -86,20 +96,23 @@ void setup() {
 }
 
 void loop() {
-
     if(currentMillis == 0 || currentMillis - previousLightSensorUpdateMillis >= INTERVAL_UPDATE_LIGHT_SENSOR) {
         previousLightSensorUpdateMillis = currentMillis;
 
         // Update LDR sensor value
         lightSensorValue = analogRead(A0);
-        lightSensorValue = map(lightSensorValue, 0, 4095, 12, 255);
-        Serial.println("Light sensor value " + String(lightSensorValue));
+        Serial.print("Light sensor value ");
+        Serial.println(lightSensorValue);
+
+        display.setBrightness(lightSensorToDisplayBrightness(lightSensorValue));
     }
 
     if(currentMillis == 0 || currentMillis - previousAppStateChangeMillis >= INTERVAL_APP_STATE) {
         previousAppStateChangeMillis = currentMillis;
-        updateAppState(appState);
+        updateAppState(appState, lightSensorValue);
         Serial.println("AppState changed to '" + String(appState) + "'");
+        Serial.print("AVAILABLE HEAP MEMORY =");
+        Serial.println(xPortGetFreeHeapSize());
 
         if(appState == Sleeping) {
             Serial.println("Sleeping now");
@@ -109,12 +122,18 @@ void loop() {
             display.drawText(0, 0, "Sleeping");
         } else if(appState != Weather) {
             Serial.println("Launching FetchTrips task");
-            xTaskCreatePinnedToCore(FetchTrips, "FetchTrips", STACK_DPETH_TRIPS_TASK, NULL, 1, &fetchTripsTaskHandle, 0);
+            BaseType_t result = xTaskCreatePinnedToCore(FetchTrips, "FetchTrips", STACK_DEPTH_TRIPS_TASK, NULL, 1, &fetchTripsTaskHandle, 0);
+            if(result == errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY) {
+                Serial.print("ERROR: Task creation failed due to insufficient memory! HEAP MEM=");
+                Serial.println(xPortGetFreeHeapSize());
+            }
         } else {
-            Serial.println("Weather mode now");
-            // TODO - Weather
-            display.clearScreen();
-            display.drawText(0,0,"Weather!");
+            Serial.println("Launching FetchWeather task");
+            BaseType_t result = xTaskCreatePinnedToCore(FetchWeather, "FetchWeather", STACK_DEPTH_WEATHER_TASK, NULL, 1, &fetchWeatherTaskHandle, 0);
+            if(result == errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY) {
+                Serial.print("ERROR: Task creation failed due to insufficient memory! HEAP MEM=");
+                Serial.println(xPortGetFreeHeapSize());
+            }
         }
     }
 
@@ -129,6 +148,19 @@ void loop() {
         char currentTime[6];
         currentHourMinute(currentTime, 6);
         display.drawBusScheduleFor(newTrips, appStateToTripsType(appState), currentTime);
+    }
+
+    // Evaluate if FetchTrips task is done
+    if(newWeatherFetched) {
+        #ifdef DEBUG
+        UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(fetchWeatherTaskHandle);
+        Serial.println("FetchWeather stack used this memory: " + String(uxHighWaterMark));
+        #endif
+
+        newWeatherFetched = false;
+        char currentTime[6];
+        currentHourMinute(currentTime, 6);
+        display.drawWeatherFor(newWeather, currentTime);
     }
     
     currentMillis = millis(); // Refresh for next loop

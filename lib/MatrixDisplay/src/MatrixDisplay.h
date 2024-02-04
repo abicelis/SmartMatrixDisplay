@@ -21,14 +21,17 @@ class MatrixDisplay {
                uint16_t panel_res_x,
                uint16_t panel_res_y,
                int8_t panel_chain);
-        void drawBusScheduleFor(TripsData trips, TripsType tripsType, const char* currentTime);
+        void drawBusScheduleFor(TripsData& trips, TripsType tripsType, const char* currentTime);
+        void drawWeatherFor(WeatherData& weatherData, const char* currentTime);
         void drawText(uint8_t x, uint8_t y, const char* text);
+        void setBrightness(uint8_t brightness);
         void clearScreen();
 
         void DrawImage(int x, int y, int width, int height, const char* imageArray);
         void drawIcon(uint16_t *ico, int8_t x, int8_t y, int8_t cols, int8_t rows);
     private:
         MatrixPanel_I2S_DMA *_dma_display = nullptr;
+        uint8_t _panelBrightness = 20;
         uint16_t _colorBlack = _dma_display->color565(0, 0, 0);
         uint16_t _colorWhite = _dma_display->color565(255, 255, 255);
         uint16_t _colorTextPrimary = _dma_display->color565(COLOR_TEXT_PRIMARY_R, COLOR_TEXT_PRIMARY_G, COLOR_TEXT_PRIMARY_B);
@@ -45,5 +48,7 @@ class MatrixDisplay {
         void drawMinuteSymbol(uint8_t x, uint8_t y);
         void shortenRouteLabel(String& label);
         uint8_t getRightAlignStartingPoint(const char* str, int8_t xPosition);
+        void fadeOutScreen();
+        void fadeInScreen();
 };
 #endif

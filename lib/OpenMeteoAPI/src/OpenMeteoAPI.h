@@ -10,6 +10,7 @@ class OpenMeteoAPI {
     private:
         WiFiClientSecure* _wifiClient;
         HTTPClient* _httpClient;
-        WeatherType wmoCodeToWeatherType(int& wmoCode);
+        WeatherType WMOCodeToWeatherType(uint8_t wmoCode);
+        UVIndex UVIndexCodeToUVIndex(uint8_t index);
 };
 #endif

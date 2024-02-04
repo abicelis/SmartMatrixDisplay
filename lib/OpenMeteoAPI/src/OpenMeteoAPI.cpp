@@ -24,31 +24,23 @@ WeatherData OpenMeteoAPI::fetchCurrentWeather() {
     serializeJsonPretty(doc, out);
     Serial.println(out);
 
-    // int routeNumber = doc["GetNextTripsForStopResult"]["Route"]["RouteDirection"]["RouteNo"].as<int>();
-    // const char* routeLabel = doc["GetNextTripsForStopResult"]["Route"]["RouteDirection"]["RouteLabel"];
-
-    // JsonArray trips = doc["GetNextTripsForStopResult"]["Route"]["RouteDirection"]["Trips"]["Trip"];
-    // for (JsonObject trip: trips) {
-    //     // Serial.println("\nfetchNextTrips is Parsing trip. i=" + String(i));
-    //     // String out = "";
-    //     // serializeJsonPretty(trip, out);
-    //     // Serial.println(out);
-    //     float adjustmentAge = trip["AdjustmentAge"].as<float>();
-    //     int adjustedScheduleTime = trip["AdjustedScheduleTime"].as<int>();
-    //     if(adjustedScheduleTime > MAX_ARRIVAL_TIME_MINUTES)
-    //         break;
-    //     result.routeNumbers.push_back(routeNumber);
-    //     result.routeLabels.push_back(routeLabel);
-    //     result.scheduleArrivalTimes.push_back(adjustedScheduleTime);
-    //     result.scheduleIsEstimated.push_back(adjustmentAge != -1);
-    // }
-
-    // _httpClient->end();
+    result.currentWeatherType = WMOCodeToWeatherType(doc["current"]["weather_code"].as<uint8_t>());
+    result.currentTemperatureCelcius = (doc["current"]["temperature_2m"].as<String>() + "°").c_str();
+    result.currentApparentTemperatureCelcius = (doc["current"]["apparent_temperature"].as<String>() + "°").c_str();
+    result.currentRelativeHumidityPercent = (doc["current"]["relative_humidity_2m"].as<String>() + "%").c_str();
+    result.currenWindSpeedKmh = doc["current"]["wind_speed_10m"];
+    result.currenWindGustsKmh = doc["current"]["wind_gusts_10m"];
+    result.dailyTemperatureMinCelcius = doc["daily"]["temperature_2m_min"][0];
+    result.dailyTemperatureMaxCelcius = doc["daily"]["temperature_2m_max"][0];
+    result.dailyPrecipitationSumMillimeter = doc["daily"]["precipitation_sum"][0];
+    result.dailyMaxUVIndex = UVIndexCodeToUVIndex(doc["daily"]["uv_index_max"][0].as<uint8_t>());
+    
+    _httpClient->end();
     return result;
 }
 
 // Mappings: https://www.nodc.noaa.gov/archive/arc0021/0002199/1.1/data/0-data/HTML/WMO-CODE/WMO4677.HTM
-WeatherType OpenMeteoAPI::wmoCodeToWeatherType(int& c) {
+WeatherType OpenMeteoAPI::WMOCodeToWeatherType(uint8_t c) {
     if(c == 0 || c == 1) {
         return Clear;
     } else if (c == 3 || c == 4) {
@@ -75,4 +67,17 @@ WeatherType OpenMeteoAPI::wmoCodeToWeatherType(int& c) {
         return SmokeOrHaze;
     }
     return Invalid;
+}
+
+UVIndex OpenMeteoAPI::UVIndexCodeToUVIndex(uint8_t index) {
+    if(index < 3)
+        return Low;
+    else if(index < 6)
+        return Moderate;
+    else if(index < 8)
+        return High;
+    else if(index < 11)
+        return VeryHigh;
+    else
+        return Extreme;
 }
