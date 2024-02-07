@@ -24,6 +24,7 @@ class MatrixDisplay {
         void drawBusScheduleFor(TripsData& trips, TripsType tripsType, const char* currentTime);
         void drawWeatherFor(WeatherData& weatherData, const char* currentTime);
         void drawText(uint8_t x, uint8_t y, const char* text);
+        void drawText(uint8_t x, uint8_t y, const char* text, uint16_t textColor);
         void setBrightness(uint8_t brightness);
         void clearScreen();
 
@@ -35,6 +36,7 @@ class MatrixDisplay {
         uint16_t _colorBlack = _dma_display->color565(0, 0, 0);
         uint16_t _colorWhite = _dma_display->color565(255, 255, 255);
         uint16_t _colorTextPrimary = _dma_display->color565(COLOR_TEXT_PRIMARY_R, COLOR_TEXT_PRIMARY_G, COLOR_TEXT_PRIMARY_B);
+        uint16_t _colorTextSecondary = _dma_display->color565(COLOR_TEXT_SECONDARY_R, COLOR_TEXT_SECONDARY_G, COLOR_TEXT_SECONDARY_B);
         uint16_t _colorTextRoute = _dma_display->color565(COLOR_TEXT_ROUTE_R, COLOR_TEXT_ROUTE_G, COLOR_TEXT_ROUTE_B);
         uint16_t _colorRouteFrequent = _dma_display->color565(COLOR_ROUTE_FREQUENT_R, COLOR_ROUTE_FREQUENT_G, COLOR_ROUTE_FREQUENT_B);
         uint16_t _colorRouteLocal = _dma_display->color565(COLOR_ROUTE_LOCAL_R, COLOR_ROUTE_LOCAL_G, COLOR_ROUTE_LOCAL_B);
@@ -43,10 +45,16 @@ class MatrixDisplay {
         TaskHandle_t trackingBusIndicatorTaskHandle = NULL;
         static void TrackingBusIndicatorTaskFunction(void *pvParameters);
 
+        std::vector<std::pair<ExtraWeatherDataType, String>> _extraWeatherData;
+        TaskHandle_t extraWeatherDataTaskHandle = NULL;
+        static void ExtraWeatherDataTaskFunction(void *pvParameters);
+
         void drawBusSign(BusType type, uint8_t x, uint8_t y, uint8_t width, const char* text);
+        void drawBusIcon(uint8_t x, uint8_t y, uint16_t color);
         static void drawTrackingBusIndicatorSymbol(MatrixPanel_I2S_DMA* dma_display, uint8_t x, uint8_t y, uint16_t color);
         void drawMinuteSymbol(uint8_t x, uint8_t y);
         void shortenRouteLabel(String& label);
+        uint8_t getTextWidth(const char *str);
         uint8_t getRightAlignStartingPoint(const char* str, int8_t xPosition);
         void fadeOutScreen();
         void fadeInScreen();

@@ -1,26 +1,14 @@
 #include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>
+#include <Fonts/FreeSans9pt7b.h>
 #include <Model.h>
 #include <Config.h>
 #include "MatrixDisplay.h"
-#include "img_weather.h"
+#include "images.h"
+#include "icons.h"
 
-void MatrixDisplay::begin(int8_t r1_pin,
-               int8_t g1_pin,
-               int8_t b1_pin,
-               int8_t r2_pin,
-               int8_t g2_pin,
-               int8_t b2_pin,
-               int8_t a_pin,
-               int8_t b_pin,
-               int8_t c_pin,
-               int8_t d_pin,
-               int8_t e_pin,
-               int8_t lat_pin,
-               int8_t oe_pin,
-               int8_t clk_pin,
-               uint16_t panel_res_x,
-               uint16_t panel_res_y,
-               int8_t panel_chain) {
+void MatrixDisplay::begin(int8_t r1_pin, int8_t g1_pin, int8_t b1_pin, int8_t r2_pin, int8_t g2_pin, int8_t b2_pin,
+               int8_t a_pin, int8_t b_pin, int8_t c_pin, int8_t d_pin, int8_t e_pin, int8_t lat_pin, int8_t oe_pin,
+               int8_t clk_pin, uint16_t panel_res_x, uint16_t panel_res_y, int8_t panel_chain) {
 
     HUB75_I2S_CFG::i2s_pins _pins={r1_pin, g1_pin, b1_pin, r2_pin, g2_pin, b2_pin, a_pin, 
                                 b_pin, c_pin, d_pin, e_pin, lat_pin, oe_pin, clk_pin};
@@ -35,50 +23,12 @@ void MatrixDisplay::begin(int8_t r1_pin,
     _dma_display->fillScreen(_colorBlack);
 }
 
-
-void MatrixDisplay::TrackingBusIndicatorTaskFunction(void *pvParameters) {
-    MatrixDisplay* instance = static_cast<MatrixDisplay*>(pvParameters);
-    std::vector<std::pair<uint8_t, uint8_t>>& indicatorPositions = instance->_trackingBusIndicatorPositions;
-    MatrixPanel_I2S_DMA* dma_display = instance->_dma_display;
-
-    Serial.print("TrackingBusIndicatorTask INIT indicatorPositions=");
-    Serial.println(indicatorPositions.size());
-    int brightnessSteps = 20;
-    int brightness = brightnessSteps;
-    bool directionUp = false;
-    for(;;) {
-        uint16_t color = dma_display->color565(
-            (uint8_t)COLOR_TEXT_PRIMARY_R*(float)brightness/brightnessSteps,
-            (uint8_t)COLOR_TEXT_PRIMARY_G*(float)brightness/brightnessSteps,
-            (uint8_t)COLOR_TEXT_PRIMARY_B*(float)brightness/brightnessSteps
-        );
-        // Serial.println("Brightness is now " + String(brightness));
-
-        for (const auto &value : indicatorPositions)
-            drawTrackingBusIndicatorSymbol(dma_display, value.first, value.second, color);
-
-        if(directionUp)
-            brightness=brightness+2;
-        else
-            brightness--;
-
-        if(brightness == -1) {
-            brightness = 0;
-            vTaskDelay(pdMS_TO_TICKS(150));
-            directionUp = true;
-        } else if(brightness > brightnessSteps) {
-            brightness = brightnessSteps;
-            vTaskDelay(pdMS_TO_TICKS(2000));
-            directionUp = false;
-        } else {
-            vTaskDelay(pdMS_TO_TICKS(50));
-        }
-    }
-}
-
 void MatrixDisplay::drawBusScheduleFor(TripsData& trips, TripsType tripsType, const char* currentTime) {
     fadeOutScreen();
     clearScreen();
+
+    //Draw lil bus
+    drawBusIcon(SCHEDULE_BUS_X_POSITION, SCHEDULE_BUS_Y_POSITION, _colorTextPrimary);
 
     // Draw Title
     if(tripsType==VickyCommute) {
@@ -142,32 +92,75 @@ void MatrixDisplay::drawWeatherFor(WeatherData& weatherData, const char* current
     fadeOutScreen();
     clearScreen();
 
-
     // Draw clock
     drawText(SCHEDULE_BUS_CLOCK_X_POSITION, SCHEDULE_BUS_CLOCK_Y_POSITION, currentTime);
+    
+    // Weather Type Str
+    String weatherTypeStr = weatherTypeToString(weatherData.currentWeatherType);
+    int center = getTextWidth(weatherTypeStr.c_str()) / 2;
+    uint8_t weatherTypeStrPosX = 33;
+    uint8_t weatherTypeStrPosY = 5;
+    drawText(weatherTypeStrPosX-center, weatherTypeStrPosY-1, weatherTypeStr.c_str(), _colorTextPrimary);
+    _dma_display->drawPixel(weatherTypeStrPosX, weatherTypeStrPosY, _colorRouteFrequent);
 
-    // Serial.print("CurrentWeatherType=" + String(weatherData.currentWeatherType));
-    // Serial.print("currentTemperatureCelcius=" + String(weatherData.currentTemperatureCelcius));
-    // Serial.print("currentRelativeHumidityPercent=" + String(weatherData.currentRelativeHumidityPercent));
-    // Serial.print("currenWindSpeedKmh=" + String(weatherData.currenWindSpeedKmh));
-    // Serial.print("currenWindGustsKmh=" + String(weatherData.currenWindGustsKmh));
-    // Serial.print("dailyTemperatureMinCelcius=" + String(weatherData.dailyTemperatureMinCelcius));
-    // Serial.print("dailyTemperatureMaxCelcius=" + String(weatherData.dailyTemperatureMaxCelcius));
-    // Serial.print("dailyPrecipitationSumMillimeter=" + String(weatherData.dailyPrecipitationSumMillimeter));
-    // Serial.print("dailyMaxUVIndex=" + String(weatherData.dailyMaxUVIndex));
+    // Weather Type Image
+	DrawImage(5, 20, 25, 25, IMG_a02);
+    _dma_display->drawFastVLine(32, 15, 35, _colorTextSecondary);
+    _dma_display->drawFastVLine(33, 15, 35, _colorTextSecondary);
+    _dma_display->drawFastHLine(33, 33, 30, _colorTextSecondary);
+    
+    uint8_t tempPosX = 37;
+    uint8_t tempPosY = 30;
+    _dma_display->setFont(&FreeSans9pt7b);
 
-	DrawImage(25, 20, 25, 25, IMG_a02);
+    int tempTextWidth = getTextWidth(weatherData.currentTemperatureCelcius.c_str());
+    tempTextWidth += 4; // Padding
 
-    drawText(50, 20, weatherData.currentTemperatureCelcius);
-    drawText(50, 40, weatherData.currentApparentTemperatureCelcius);
-    drawText(2, 60, (String(weatherData.dailyTemperatureMinCelcius) + "/" + String(weatherData.dailyTemperatureMaxCelcius)).c_str());
+    drawText(tempPosX, tempPosY, weatherData.currentTemperatureCelcius.c_str());
+    // char tempSign = 0xF7;
+    // _dma_display->print(tempSign); 
+    _dma_display->setFont();
+    drawText(tempPosX + tempTextWidth, tempPosY-6, "C", _colorTextPrimary);
+    
+
+    // FEEL text
+    uint8_t feelPosX = 42;
+    uint8_t feelPosY = 35;
+    _dma_display->drawFastVLine(feelPosX,     feelPosY,   3, _colorTextPrimary);
+    _dma_display->drawFastHLine(feelPosX+1,   feelPosY,   2, _colorTextPrimary);
+    _dma_display->drawPixel(feelPosX+1,       feelPosY+1,    _colorTextPrimary);
+    _dma_display->drawFastHLine(feelPosX+4,   feelPosY,   3, _colorTextPrimary);
+    _dma_display->drawFastHLine(feelPosX+4,   feelPosY+1, 2, _colorTextPrimary);
+    _dma_display->drawFastHLine(feelPosX+4,   feelPosY+2, 3, _colorTextPrimary);
+    _dma_display->drawFastHLine(feelPosX+8,   feelPosY,   3, _colorTextPrimary);
+    _dma_display->drawFastHLine(feelPosX+8,   feelPosY+1, 2, _colorTextPrimary);
+    _dma_display->drawFastHLine(feelPosX+8,   feelPosY+2, 3, _colorTextPrimary);
+    _dma_display->drawFastVLine(feelPosX+12,  feelPosY,   3, _colorTextPrimary);
+    _dma_display->drawFastHLine(feelPosX+13,  feelPosY+2, 2, _colorTextPrimary);
+
+    // Apparent Temp
+    drawText(40, 40, weatherData.currentApparentTemperatureCelcius.c_str());
+
+    // Max Min Daily temps
+    drawText(4, 50, (weatherData.dailyTemperatureMaxCelcius + "/" + weatherData.dailyTemperatureMinCelcius).c_str(), _colorTextPrimary);
+
+
 
     
+
     fadeInScreen();
+    _extraWeatherData = weatherData.extraWeatherData;
+    xTaskCreatePinnedToCore(ExtraWeatherDataTaskFunction, "ExtraWeatherDataTaskFunction", 
+        STACK_DEPTH_EXTRA_WEATHER_DATA_TASK, this, 1, &extraWeatherDataTaskHandle, 1);
+    Serial.println("ExtraWeatherDataTask LAUNCHED");
 }
 
 void MatrixDisplay::drawText(uint8_t x, uint8_t y, const char* text) {
-    _dma_display->setTextColor(_colorTextPrimary);
+    drawText(x, y, text, _colorTextPrimary);
+}
+
+void MatrixDisplay::drawText(uint8_t x, uint8_t y, const char* text, uint16_t textColor) {
+    _dma_display->setTextColor(textColor);
     _dma_display->setCursor(x, y);
     _dma_display->print(text);
 }
@@ -197,6 +190,17 @@ void MatrixDisplay::clearScreen() {
         #ifdef DEBUG
         UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(trackingBusIndicatorTaskHandle);
         Serial.println("TrackingBusIndicatorTask stack used this memory: " + String(uxHighWaterMark));
+        #endif
+
+    }
+    if( extraWeatherDataTaskHandle != NULL ) {
+        Serial.println("ExtraWeatherDataTaskFunction DELETED");
+        vTaskDelete( extraWeatherDataTaskHandle );
+        extraWeatherDataTaskHandle = nullptr;
+
+        #ifdef DEBUG
+        UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(extraWeatherDataTaskHandle);
+        Serial.println("ExtraWeatherDataTaskFunction stack used this memory: " + String(uxHighWaterMark));
         #endif
 
     }
@@ -249,6 +253,124 @@ void MatrixDisplay::drawIcon(uint16_t *ico, int8_t x, int8_t y, int8_t cols, int
     }
 }
 
+void MatrixDisplay::TrackingBusIndicatorTaskFunction(void *pvParameters) {
+    MatrixDisplay* instance = static_cast<MatrixDisplay*>(pvParameters);
+    std::vector<std::pair<uint8_t, uint8_t>>& indicatorPositions = instance->_trackingBusIndicatorPositions;
+    MatrixPanel_I2S_DMA* dma_display = instance->_dma_display;
+
+    Serial.print("TrackingBusIndicatorTask INIT indicatorPositions=");
+    Serial.println(indicatorPositions.size());
+    int brightnessSteps = 20;
+    int brightness = brightnessSteps;
+    bool directionUp = false;
+    for(;;) {
+        uint16_t color = dma_display->color565(
+            (uint8_t)COLOR_TEXT_PRIMARY_R*(float)brightness/brightnessSteps,
+            (uint8_t)COLOR_TEXT_PRIMARY_G*(float)brightness/brightnessSteps,
+            (uint8_t)COLOR_TEXT_PRIMARY_B*(float)brightness/brightnessSteps
+        );
+        // Serial.println("Brightness is now " + String(brightness));
+
+        for (const auto &value : indicatorPositions)
+            drawTrackingBusIndicatorSymbol(dma_display, value.first, value.second, color);
+
+        if(directionUp)
+            brightness=brightness+2;
+        else
+            brightness--;
+
+        if(brightness == -1) {
+            brightness = 0;
+            vTaskDelay(pdMS_TO_TICKS(150));
+            directionUp = true;
+        } else if(brightness > brightnessSteps) {
+            brightness = brightnessSteps;
+            vTaskDelay(pdMS_TO_TICKS(2000));
+            directionUp = false;
+        } else {
+            vTaskDelay(pdMS_TO_TICKS(50));
+        }
+    }
+}
+
+void MatrixDisplay::ExtraWeatherDataTaskFunction(void *pvParameters) {
+    MatrixDisplay* instance = static_cast<MatrixDisplay*>(pvParameters);
+    std::vector<std::pair<ExtraWeatherDataType, String>> extraWeatherData = instance->_extraWeatherData;
+    MatrixPanel_I2S_DMA* dma_display = instance->_dma_display;
+    Serial.println("WeatherInfoTaskFunction INIT");
+
+    uint8_t page = 0;
+    uint8_t dataPerPage = 3;
+    for(;;) {
+
+        int brightness = 0;
+        bool fadingIn = true;
+        int brightnessSteps = 20;
+        for(;;) {
+            uint16_t color = dma_display->color565(
+                (uint8_t)COLOR_TEXT_PRIMARY_R*(float)brightness/brightnessSteps,
+                (uint8_t)COLOR_TEXT_PRIMARY_G*(float)brightness/brightnessSteps,
+                (uint8_t)COLOR_TEXT_PRIMARY_B*(float)brightness/brightnessSteps
+            );
+
+            uint8_t posY = 11;
+            uint8_t posX = 70;
+            for(int i = page*dataPerPage; i<(dataPerPage*(page+1)); i++) {
+
+                const unsigned char* icon;
+
+                ExtraWeatherDataType type = extraWeatherData.at(i).first;
+
+                if(type == CurrentRelativeHumidity)
+                    icon = icon_Humidity;
+                else if (type == CurrentWindSpeed)
+                    icon = icon_WindSpeed;
+                else if (type == DailyPrecipitation)
+                    icon = icon_Precipitation;
+                else if (type == Sunrise)
+                    icon = icon_Sunrise;
+                else if (type == Sunset)
+                    icon = icon_Sunset;
+                else if (type == MaxUVIndex)
+                    icon = icon_UV;
+                    
+                dma_display->drawBitmap(posX, posY, icon, 16, 16, color);
+                dma_display->setCursor(posX+20, posY+4);
+                dma_display->setTextColor(color);
+                dma_display->print(extraWeatherData.at(i).second);
+                posY+=17;
+
+
+            }
+
+            if(fadingIn)
+                brightness=brightness+2;
+            else
+                brightness--;
+
+            if(brightness > brightnessSteps) {
+                brightness = brightnessSteps;
+                vTaskDelay(pdMS_TO_TICKS(5000));
+                fadingIn = false;
+            } else if(brightness == -1) {
+                break;
+            }  
+            else {
+                vTaskDelay(pdMS_TO_TICKS(50));
+            }
+
+
+            
+    
+        }
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        if(page == 0)
+            page = 1;
+        else
+            page = 0;
+    }
+}
+
 void MatrixDisplay::drawBusSign(BusType type, uint8_t x, uint8_t y, uint8_t width, const char* text) {
     int height = 9;
     if(type == FrequentBus) {
@@ -273,8 +395,19 @@ void MatrixDisplay::drawBusSign(BusType type, uint8_t x, uint8_t y, uint8_t widt
     _dma_display->print(text);
 }
 
+void MatrixDisplay::drawBusIcon(uint8_t x, uint8_t y, uint16_t color) {
+    _dma_display->drawFastHLine(x+1, y, 5, color);
+    _dma_display->drawFastHLine(x+1, y+2, 5, color);
+    _dma_display->drawFastHLine(x+1, y+5, 5, color);
+    _dma_display->drawFastHLine(x+2, y+6, 3, color);
+    _dma_display->drawFastHLine(x+1, y+7, 5, color);
+    _dma_display->drawFastVLine(x,   y+1, 7, color);
+    _dma_display->drawFastVLine(x+6, y+1, 7, color);
+    _dma_display->drawPixel(x+1, y+8, color);
+    _dma_display->drawPixel(x+5, y+8, color);
+}
+
 void MatrixDisplay::drawTrackingBusIndicatorSymbol(MatrixPanel_I2S_DMA* dma_display, uint8_t x, uint8_t y, uint16_t color) {
-    
     dma_display->drawFastVLine(x, y, 3, color);             // L
     dma_display->drawFastHLine(x+1, y+2, 2, color);
     dma_display->drawFastVLine(x+4, y, 3, color);           // I
@@ -283,10 +416,6 @@ void MatrixDisplay::drawTrackingBusIndicatorSymbol(MatrixPanel_I2S_DMA* dma_disp
     dma_display->drawFastHLine(x+12, y, 3, color);          // E
     dma_display->drawFastHLine(x+12, y+1, 2, color);
     dma_display->drawFastHLine(x+12, y+2, 3, color);
-
-    // 'T' icon
-    // dma_display->drawLine(x, y, x+2, y, color);
-    // dma_display->drawLine(x+1, y+1, x+1, y+2, color);
 }
 
 void MatrixDisplay::drawMinuteSymbol(uint8_t x, uint8_t y) {
@@ -298,11 +427,15 @@ void MatrixDisplay::shortenRouteLabel(String& label) {
     label.replace("Centre", "C");
 }
 
-uint8_t MatrixDisplay::getRightAlignStartingPoint(const char *str, int8_t xPosition) {
+uint8_t MatrixDisplay::getTextWidth(const char *str) {
     int16_t  x1, y1;
     uint16_t w, h;
     _dma_display->getTextBounds(str, 0, 0, &x1, &y1, &w, &h);
-    return (xPosition - w);
+    return w;
+}
+
+uint8_t MatrixDisplay::getRightAlignStartingPoint(const char *str, int8_t xPosition) {
+    return (xPosition - getTextWidth(str));
 }
 
 void MatrixDisplay::fadeOutScreen() {
