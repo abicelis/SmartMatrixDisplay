@@ -24,17 +24,25 @@ WeatherData OpenMeteoAPI::fetchCurrentWeather() {
     serializeJsonPretty(doc, out);
     Serial.println(out);
 
-    result.currentWeatherType = WMOCodeToWeatherType(doc["current"]["weather_code"].as<uint8_t>());
-    result.currentTemperatureCelcius = (doc["current"]["temperature_2m"].as<String>() + "°").c_str();
-    result.currentApparentTemperatureCelcius = (doc["current"]["apparent_temperature"].as<String>() + "°").c_str();
-    result.currentRelativeHumidityPercent = (doc["current"]["relative_humidity_2m"].as<String>() + "%").c_str();
-    result.currenWindSpeedKmh = doc["current"]["wind_speed_10m"];
-    result.currenWindGustsKmh = doc["current"]["wind_gusts_10m"];
-    result.dailyTemperatureMinCelcius = doc["daily"]["temperature_2m_min"][0];
-    result.dailyTemperatureMaxCelcius = doc["daily"]["temperature_2m_max"][0];
-    result.dailyPrecipitationSumMillimeter = doc["daily"]["precipitation_sum"][0];
-    result.dailyMaxUVIndex = UVIndexCodeToUVIndex(doc["daily"]["uv_index_max"][0].as<uint8_t>());
+    result.currentWeatherType = WMOCodeToWeatherType(doc["current"]["weather_code"].as<int>());
+    result.currentTemperatureCelcius = String(doc["current"]["temperature_2m"].as<int>());
+    result.currentApparentTemperatureCelcius = String(doc["current"]["apparent_temperature"].as<int>());
+    result.dailyTemperatureMinCelcius = String(doc["daily"]["temperature_2m_min"][0].as<int>());
+    result.dailyTemperatureMaxCelcius = String(doc["daily"]["temperature_2m_max"][0].as<int>());
+
+    result.extraWeatherData.push_back(std::make_pair(CurrentRelativeHumidity, String(doc["current"]["relative_humidity_2m"].as<int>()) + " %"));
+    result.extraWeatherData.push_back(std::make_pair(CurrentWindSpeed, String(doc["current"]["wind_speed_10m"].as<int>()) + " Kmh"));
+    result.extraWeatherData.push_back(std::make_pair(DailyPrecipitation, String(doc["daily"]["precipitation_sum"][0].as<int>()) + " mm"));
+
+    result.extraWeatherData.push_back(std::make_pair(Sunrise, TimeStringFromUnixTimestamp(doc["daily"]["sunrise"][0].as<long>())));
+    result.extraWeatherData.push_back(std::make_pair(Sunset, TimeStringFromUnixTimestamp(doc["daily"]["sunset"][0].as<long>())));
+    result.extraWeatherData.push_back(std::make_pair(MaxUVIndex, UVIndexCodeToString(doc["daily"]["uv_index_max"][0].as<int>())));
     
+    Serial.println("PRINTING VALUES NOW");
+    for(const auto &value: result.extraWeatherData) {
+        Serial.println(value.second);
+    }
+
     _httpClient->end();
     return result;
 }
@@ -69,15 +77,28 @@ WeatherType OpenMeteoAPI::WMOCodeToWeatherType(uint8_t c) {
     return Invalid;
 }
 
-UVIndex OpenMeteoAPI::UVIndexCodeToUVIndex(uint8_t index) {
+String OpenMeteoAPI::UVIndexCodeToString(uint8_t index) {
     if(index < 3)
-        return Low;
+        return "Low";
     else if(index < 6)
-        return Moderate;
+        return "Mid";
     else if(index < 8)
-        return High;
+        return "High";
     else if(index < 11)
-        return VeryHigh;
+        return "High+";
     else
-        return Extreme;
+        return "High++";
 }
+
+String OpenMeteoAPI::TimeStringFromUnixTimestamp(time_t timestamp) {
+    char timeStr[6]; // to hold the time string
+
+    struct tm *timeinfo;
+    timeinfo = localtime(&timestamp);
+
+  // Format the time into a HH:mm string
+  strftime(timeStr, sizeof(timeStr), "%H:%M", timeinfo);
+
+  return String(timeStr);
+}
+

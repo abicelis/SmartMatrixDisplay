@@ -11,6 +11,7 @@ class OpenMeteoAPI {
         WiFiClientSecure* _wifiClient;
         HTTPClient* _httpClient;
         WeatherType WMOCodeToWeatherType(uint8_t wmoCode);
-        UVIndex UVIndexCodeToUVIndex(uint8_t index);
+        String UVIndexCodeToString(uint8_t index);
+        String TimeStringFromUnixTimestamp(time_t timestamp);
 };
 #endif
