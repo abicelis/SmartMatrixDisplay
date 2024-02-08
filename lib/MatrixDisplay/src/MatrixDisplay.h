@@ -50,7 +50,6 @@ class MatrixDisplay {
         static void ExtraWeatherDataTaskFunction(void *pvParameters);
 
         void drawBusSign(BusType type, uint8_t x, uint8_t y, uint8_t width, const char* text);
-        void drawBusIcon(uint8_t x, uint8_t y, uint16_t color);
         static void drawTrackingBusIndicatorSymbol(MatrixPanel_I2S_DMA* dma_display, uint8_t x, uint8_t y, uint16_t color);
         void drawMinuteSymbol(uint8_t x, uint8_t y);
         void shortenRouteLabel(String& label);

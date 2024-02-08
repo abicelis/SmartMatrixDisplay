@@ -29,7 +29,7 @@ WeatherData OpenMeteoAPI::fetchCurrentWeather() {
     result.currentApparentTemperatureCelcius = String(doc["current"]["apparent_temperature"].as<int>());
     result.dailyTemperatureMinCelcius = String(doc["daily"]["temperature_2m_min"][0].as<int>());
     result.dailyTemperatureMaxCelcius = String(doc["daily"]["temperature_2m_max"][0].as<int>());
-
+    
     result.extraWeatherData.push_back(std::make_pair(CurrentRelativeHumidity, String(doc["current"]["relative_humidity_2m"].as<int>()) + " %"));
     result.extraWeatherData.push_back(std::make_pair(CurrentWindSpeed, String(doc["current"]["wind_speed_10m"].as<int>()) + " Kmh"));
     result.extraWeatherData.push_back(std::make_pair(DailyPrecipitation, String(doc["daily"]["precipitation_sum"][0].as<int>()) + " mm"));
