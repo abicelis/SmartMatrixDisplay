@@ -145,9 +145,9 @@ void loop() {
         #endif
 
         newTripsFetched = false;
-        char currentTime[6];
-        currentHourMinute(currentTime, 6);
-        display.drawBusScheduleFor(newTrips, appStateToTripsType(appState), currentTime);
+        char currentHHMM[6];
+        currentHourMinute(currentHHMM, 6);
+        display.drawBusScheduleFor(newTrips, appStateToTripsType(appState), currentHHMM);
     }
 
     // Evaluate if FetchTrips task is done
@@ -158,9 +158,9 @@ void loop() {
         #endif
 
         newWeatherFetched = false;
-        char currentTime[6];
-        currentHourMinute(currentTime, 6);
-        display.drawWeatherFor(newWeather, currentTime);
+        char currentHHMM[6];
+        currentHourMinute(currentHHMM, 6);
+        display.drawWeatherFor(newWeather, currentHHMM);
     }
     
     currentMillis = millis(); // Refresh for next loop

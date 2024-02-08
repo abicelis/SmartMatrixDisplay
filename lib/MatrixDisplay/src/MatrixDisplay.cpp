@@ -109,7 +109,7 @@ void MatrixDisplay::drawWeatherFor(WeatherData& weatherData, const char* current
     // Weather Type Image
     uint8_t weatherTypePosX = 5;
     uint8_t weatherTypePosY = 18;
-	DrawImage(weatherTypePosX, weatherTypePosY, 25, 25, weatherTypeToImage(weatherData.currentWeatherType, true));
+	DrawImage(weatherTypePosX, weatherTypePosY, 25, 25, weatherTypeToImage(weatherData.currentWeatherType, weatherData.isDaytime));
 
     // Divider Lines
     _dma_display->drawFastVLine(32, 15, 35, _colorTextSecondary);

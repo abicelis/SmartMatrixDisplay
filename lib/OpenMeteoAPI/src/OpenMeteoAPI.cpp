@@ -24,18 +24,24 @@ WeatherData OpenMeteoAPI::fetchCurrentWeather() {
     serializeJsonPretty(doc, out);
     Serial.println(out);
 
+    long sunriseTimestamp = doc["daily"]["sunrise"][0].as<long>();
+    long sunsetTimestamp = doc["daily"]["sunset"][0].as<long>();
+    time_t nowTimestamp;
+    time(&nowTimestamp);
+
     result.currentWeatherType = WMOCodeToWeatherType(doc["current"]["weather_code"].as<int>());
     result.currentTemperatureCelcius = String(doc["current"]["temperature_2m"].as<int>());
     result.currentApparentTemperatureCelcius = String(doc["current"]["apparent_temperature"].as<int>());
     result.dailyTemperatureMinCelcius = String(doc["daily"]["temperature_2m_min"][0].as<int>());
     result.dailyTemperatureMaxCelcius = String(doc["daily"]["temperature_2m_max"][0].as<int>());
+    result.isDaytime = (nowTimestamp >= sunriseTimestamp && nowTimestamp <= sunsetTimestamp);
     
     result.extraWeatherData.push_back(std::make_pair(CurrentRelativeHumidity, String(doc["current"]["relative_humidity_2m"].as<int>()) + " %"));
     result.extraWeatherData.push_back(std::make_pair(CurrentWindSpeed, String(doc["current"]["wind_speed_10m"].as<int>()) + " Kmh"));
     result.extraWeatherData.push_back(std::make_pair(DailyPrecipitation, String(doc["daily"]["precipitation_sum"][0].as<int>()) + " mm"));
 
-    result.extraWeatherData.push_back(std::make_pair(Sunrise, TimeStringFromUnixTimestamp(doc["daily"]["sunrise"][0].as<long>())));
-    result.extraWeatherData.push_back(std::make_pair(Sunset, TimeStringFromUnixTimestamp(doc["daily"]["sunset"][0].as<long>())));
+    result.extraWeatherData.push_back(std::make_pair(Sunrise, TimeStringFromUnixTimestamp(sunriseTimestamp)));
+    result.extraWeatherData.push_back(std::make_pair(Sunset, TimeStringFromUnixTimestamp(sunsetTimestamp)));
     result.extraWeatherData.push_back(std::make_pair(MaxUVIndex, UVIndexCodeToString(doc["daily"]["uv_index_max"][0].as<int>())));
     
     Serial.println("PRINTING VALUES NOW");
@@ -49,9 +55,11 @@ WeatherData OpenMeteoAPI::fetchCurrentWeather() {
 
 // Mappings: https://www.nodc.noaa.gov/archive/arc0021/0002199/1.1/data/0-data/HTML/WMO-CODE/WMO4677.HTM
 WeatherType OpenMeteoAPI::WMOCodeToWeatherType(uint8_t c) {
-    if(c == 0 || c == 1) {
+    Serial.print("WMOCodeToWeatherType called with code");
+    Serial.println(c);
+    if(c == 0 || c == 1) { 
         return Clear;
-    } else if (c == 3 || c == 4) {
+    } else if (c == 2 || c == 3 || c == 4) {  // 2 means actually "unchanged"... But we'll assume Cloudy.
         return Cloudy;
     } else if (c == 20 || (c >= 50 && c <= 55)) {
         return Drizzle;

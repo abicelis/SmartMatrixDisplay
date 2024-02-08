@@ -46,6 +46,7 @@ struct WeatherData {
     String currentApparentTemperatureCelcius;                    // "Feels like" temp.
     String dailyTemperatureMinCelcius;
     String dailyTemperatureMaxCelcius;
+    bool isDaytime;
     std::vector<std::pair<ExtraWeatherDataType, String>> extraWeatherData;
 };
 
