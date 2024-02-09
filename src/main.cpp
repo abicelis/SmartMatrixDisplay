@@ -97,29 +97,25 @@ void setup() {
 
 void loop() {
     if(currentMillis == 0 || currentMillis - previousLightSensorUpdateMillis >= INTERVAL_UPDATE_LIGHT_SENSOR) {
-        previousLightSensorUpdateMillis = currentMillis;
-
         // Update LDR sensor value
         lightSensorValue = analogRead(A0);
         Serial.print("Light sensor value ");
         Serial.println(lightSensorValue);
-
         display.setBrightness(lightSensorToDisplayBrightness(lightSensorValue));
+        previousLightSensorUpdateMillis = currentMillis;
     }
 
     if(currentMillis == 0 || currentMillis - previousAppStateChangeMillis >= INTERVAL_APP_STATE) {
-        previousAppStateChangeMillis = currentMillis;
         updateAppState(appState, lightSensorValue);
         Serial.println("AppState changed to '" + String(appState) + "'");
-        Serial.print("AVAILABLE HEAP MEMORY =");
-        Serial.println(xPortGetFreeHeapSize());
+        // Serial.print("AVAILABLE HEAP MEMORY =");
+        // Serial.println(xPortGetFreeHeapSize());
 
         if(appState == Sleeping) {
             Serial.println("Sleeping now");
-
             // TODO - Something more interesting here? Maybe a cool animation?
             display.clearScreen();
-            display.drawText(0, 0, "Sleeping");
+            display.drawText(40, 36, "Zzzz..");
         } else if(appState != Weather) {
             Serial.println("Launching FetchTrips task");
             BaseType_t result = xTaskCreatePinnedToCore(FetchTrips, "FetchTrips", STACK_DEPTH_TRIPS_TASK, NULL, 1, &fetchTripsTaskHandle, 0);
@@ -135,6 +131,7 @@ void loop() {
                 Serial.println(xPortGetFreeHeapSize());
             }
         }
+        previousAppStateChangeMillis = currentMillis;
     }
 
     // Evaluate if FetchTrips task is done
