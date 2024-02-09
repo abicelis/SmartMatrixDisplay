@@ -20,9 +20,9 @@ WeatherData OpenMeteoAPI::fetchCurrentWeather() {
 
     WeatherData result;
 
-    String out = "";
-    serializeJsonPretty(doc, out);
-    Serial.println(out);
+    // String out = "";
+    // serializeJsonPretty(doc, out);
+    // Serial.println(out);
 
     long sunriseTimestamp = doc["daily"]["sunrise"][0].as<long>();
     long sunsetTimestamp = doc["daily"]["sunset"][0].as<long>();
@@ -44,10 +44,10 @@ WeatherData OpenMeteoAPI::fetchCurrentWeather() {
     result.extraWeatherData.push_back(std::make_pair(Sunset, TimeStringFromUnixTimestamp(sunsetTimestamp)));
     result.extraWeatherData.push_back(std::make_pair(MaxUVIndex, UVIndexCodeToString(doc["daily"]["uv_index_max"][0].as<int>())));
     
-    Serial.println("PRINTING VALUES NOW");
-    for(const auto &value: result.extraWeatherData) {
-        Serial.println(value.second);
-    }
+    // Serial.println("Extra weather data:");
+    // for(const auto &value: result.extraWeatherData) {
+        // Serial.println(value.second);
+    // }
 
     _httpClient->end();
     return result;
@@ -55,7 +55,7 @@ WeatherData OpenMeteoAPI::fetchCurrentWeather() {
 
 // Mappings: https://www.nodc.noaa.gov/archive/arc0021/0002199/1.1/data/0-data/HTML/WMO-CODE/WMO4677.HTM
 WeatherType OpenMeteoAPI::WMOCodeToWeatherType(uint8_t c) {
-    Serial.print("WMOCodeToWeatherType called with code");
+    Serial.print("WMOCodeToWeatherType called with code ");
     Serial.println(c);
     if(c == 0 || c == 1) { 
         return Clear;

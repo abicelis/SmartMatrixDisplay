@@ -20,10 +20,10 @@ OpenMeteoAPI openMeteoAPI(&wifiClient, &httpClient);
 
 AppState appState = RoutesEastWest;
 uint16_t lightSensorValue = 0;
-uint16_t currentMillis = 0;
-uint16_t previousAppStateChangeMillis = 0;
-uint16_t previousTrackingBusIndicatorMillis = 0;
-uint16_t previousLightSensorUpdateMillis = 0;
+uint32_t currentMillis = 0;
+uint32_t previousAppStateChangeMillis = 0;
+uint32_t previousTrackingBusIndicatorMillis = 0;
+uint32_t previousLightSensorUpdateMillis = 0;
 TaskHandle_t fetchTripsTaskHandle = NULL;
 TaskHandle_t fetchWeatherTaskHandle = NULL;
 
@@ -99,8 +99,8 @@ void loop() {
     if(currentMillis == 0 || currentMillis - previousLightSensorUpdateMillis >= INTERVAL_UPDATE_LIGHT_SENSOR) {
         // Update LDR sensor value
         lightSensorValue = analogRead(A0);
-        Serial.print("Light sensor value ");
-        Serial.println(lightSensorValue);
+        // Serial.print("Light sensor value ");
+        // Serial.println(lightSensorValue);
         display.setBrightness(lightSensorToDisplayBrightness(lightSensorValue));
         previousLightSensorUpdateMillis = currentMillis;
     }
@@ -108,14 +108,14 @@ void loop() {
     if(currentMillis == 0 || currentMillis - previousAppStateChangeMillis >= INTERVAL_APP_STATE) {
         updateAppState(appState, lightSensorValue);
         Serial.println("AppState changed to '" + String(appState) + "'");
-        // Serial.print("AVAILABLE HEAP MEMORY =");
-        // Serial.println(xPortGetFreeHeapSize());
+        Serial.print("AVAILABLE HEAP MEMORY =");
+        Serial.println(xPortGetFreeHeapSize());
 
         if(appState == Sleeping) {
             Serial.println("Sleeping now");
             // TODO - Something more interesting here? Maybe a cool animation?
             display.clearScreen();
-            display.drawText(40, 36, "Zzzz..");
+            display.drawText(48, 30, "Zzzz..");
         } else if(appState != Weather) {
             Serial.println("Launching FetchTrips task");
             BaseType_t result = xTaskCreatePinnedToCore(FetchTrips, "FetchTrips", STACK_DEPTH_TRIPS_TASK, NULL, 1, &fetchTripsTaskHandle, 0);
