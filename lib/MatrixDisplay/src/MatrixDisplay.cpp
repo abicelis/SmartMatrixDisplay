@@ -92,7 +92,7 @@ void MatrixDisplay::drawWeatherFor(WeatherData& weatherData, const char* current
     fadeOutScreen();
     clearScreen();
 
-    //Draw lil sun
+    // Draw lil sun
     _dma_display->drawBitmap(SCHEDULE_BUS_X_POSITION, SCHEDULE_BUS_Y_POSITION, icon_Sun, 7, 9, _colorTextPrimary);
 
     // Draw Title
@@ -107,14 +107,33 @@ void MatrixDisplay::drawWeatherFor(WeatherData& weatherData, const char* current
         PANEL_RES_X - SCHEDULE_HORIZONTAL_MARGIN_PX*2, _colorTextPrimary);
 
     // Weather Type Image
-    uint8_t weatherTypePosX = 5;
-    uint8_t weatherTypePosY = 18;
+    uint8_t weatherTypePosX = 4;
+    uint8_t weatherTypePosY = 15;
 	DrawImage(weatherTypePosX, weatherTypePosY, 25, 25, weatherTypeToImage(weatherData.currentWeatherType, weatherData.isDaytime));
 
+    // MaxMin temp Pos
+    uint8_t maxMinIconPosX = 4;
+    uint8_t maxIconPosY = 45;
+    uint8_t minIconPosY = 55;
+    
+    // Max temp
+    _dma_display->drawBitmap(maxMinIconPosX, maxIconPosY, icon_Max, 5, 5, _colorTextPrimary);
+    int maxTempTextWidth = getTextWidth(weatherData.dailyTemperatureMaxCelcius.c_str());
+    drawText(maxMinIconPosX+7, maxIconPosY-1, weatherData.dailyTemperatureMaxCelcius.c_str());
+    _dma_display->drawRect(maxMinIconPosX+5+maxTempTextWidth+2, maxIconPosY-1, 2, 2, _colorTextPrimary);
+
+    // Min temp value
+    _dma_display->drawBitmap(maxMinIconPosX, minIconPosY, icon_Min, 5, 5, _colorTextPrimary);
+    int minTempTextWidth = getTextWidth(weatherData.dailyTemperatureMinCelcius.c_str());
+    drawText(maxMinIconPosX+7, minIconPosY-1, weatherData.dailyTemperatureMinCelcius.c_str());
+    _dma_display->drawRect(maxMinIconPosX+5+minTempTextWidth+2, minIconPosY-1, 2, 2, _colorTextPrimary);
+
+
+
+
     // Divider Lines
-    _dma_display->drawFastVLine(32, 15, 35, _colorTextSecondary);
-    _dma_display->drawFastVLine(33, 15, 35, _colorTextSecondary);
-    _dma_display->drawFastHLine(33, 33, 30, _colorTextSecondary);
+    _dma_display->drawFastVLine(32, 15, 46, _colorTextSecondary);
+    _dma_display->drawFastVLine(65, 15, 46, _colorTextSecondary);
     
     // Draw current Temp
     uint8_t tempPosX = 46;
@@ -129,36 +148,19 @@ void MatrixDisplay::drawWeatherFor(WeatherData& weatherData, const char* current
     // Draw degree Symbol
     _dma_display->drawRect(tempPosX+tempTextHalfWidth+4, tempPosY-14, 3, 3, _colorTextPrimary);
     
-    // FEEL text
-    uint8_t feelPosX = 42;
-    uint8_t feelPosY = 35;
-    _dma_display->drawFastVLine(feelPosX,     feelPosY,   3, _colorTextPrimary);
-    _dma_display->drawFastHLine(feelPosX+1,   feelPosY,   2, _colorTextPrimary);
-    _dma_display->drawPixel(feelPosX+1,       feelPosY+1,    _colorTextPrimary);
-    _dma_display->drawFastHLine(feelPosX+4,   feelPosY,   3, _colorTextPrimary);
-    _dma_display->drawFastHLine(feelPosX+4,   feelPosY+1, 2, _colorTextPrimary);
-    _dma_display->drawFastHLine(feelPosX+4,   feelPosY+2, 3, _colorTextPrimary);
-    _dma_display->drawFastHLine(feelPosX+8,   feelPosY,   3, _colorTextPrimary);
-    _dma_display->drawFastHLine(feelPosX+8,   feelPosY+1, 2, _colorTextPrimary);
-    _dma_display->drawFastHLine(feelPosX+8,   feelPosY+2, 3, _colorTextPrimary);
-    _dma_display->drawFastVLine(feelPosX+12,  feelPosY,   3, _colorTextPrimary);
-    _dma_display->drawFastHLine(feelPosX+13,  feelPosY+2, 2, _colorTextPrimary);
+    // FEELS LIKE
+    uint8_t feelsLikePosX = 37;
+    uint8_t feelsLikePosY = 35;
+    _dma_display->drawBitmap(feelsLikePosX, feelsLikePosY, icon_FeelsLike, 24, 11, _colorTextPrimary);
 
     // Apparent Temp
     uint8_t feelTempPosX = 46;
-    uint8_t feelTempPosY = 40;
+    uint8_t feelTempPosY = 50;
     int feelTempTextHalfWidth = getTextWidth(weatherData.currentApparentTemperatureCelcius.c_str())/2 - 1;
     drawText(feelTempPosX-feelTempTextHalfWidth, feelTempPosY, weatherData.currentApparentTemperatureCelcius.c_str());
     _dma_display->drawRect(feelTempPosX+feelTempTextHalfWidth+2, feelTempPosY-1, 2, 2, _colorTextPrimary);
     // _dma_display->drawPixel(feelTempPosX-feelTempTextHalfWidth, feelTempPosY, _dma_display->color565(255,0,0));
     // _dma_display->drawPixel(feelTempPosX, feelTempPosY, _colorRouteFrequent);
-
-    // Max Min Daily temps
-    uint8_t maxMinTempPosX = 33;
-    uint8_t maxMinTempPosY = 53;
-    String maxMinStr = weatherData.dailyTemperatureMaxCelcius + " / " + weatherData.dailyTemperatureMinCelcius;
-    int maxMinTextHalfWidth = getTextWidth(maxMinStr.c_str())/2 - 1;
-    drawText(maxMinTempPosX-maxMinTextHalfWidth, maxMinTempPosY, maxMinStr.c_str(), _colorTextPrimary);
 
     fadeInScreen();
     _extraWeatherData = weatherData.extraWeatherData;
