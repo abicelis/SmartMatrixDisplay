@@ -20,7 +20,6 @@
 
 // Interval control
 #define INTERVAL_APP_STATE 60000                            // Time in millis to display an App State
-#define INTERVAL_UPDATE_TRACKING_BUS_INDICATOR 700
 #define INTERVAL_UPDATE_LIGHT_SENSOR 2000
 
 // UI - Spacing

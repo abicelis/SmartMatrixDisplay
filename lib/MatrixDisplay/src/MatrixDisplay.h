@@ -48,14 +48,13 @@ class MatrixDisplay {
         std::vector<std::pair<ExtraWeatherDataType, String>> _extraWeatherData;
         TaskHandle_t extraWeatherDataTaskHandle = NULL;
         static void ExtraWeatherDataTaskFunction(void *pvParameters);
-
         void drawBusSign(BusType type, uint8_t x, uint8_t y, uint8_t width, const char* text);
-        static void drawTrackingBusIndicatorSymbol(MatrixPanel_I2S_DMA* dma_display, uint8_t x, uint8_t y, uint16_t color);
         void drawMinuteSymbol(uint8_t x, uint8_t y);
         void shortenRouteLabel(String& label);
         uint8_t getTextWidth(const char *str);
         uint8_t getRightAlignStartingPoint(const char* str, int8_t xPosition);
         void fadeOutScreen();
         void fadeInScreen();
+        static uint16_t colorWithIntensity(MatrixPanel_I2S_DMA* dma_display, uint8_t r, uint8_t g, uint8_t b, float fraction);
 };
 #endif

@@ -72,7 +72,6 @@ void MatrixDisplay::drawBusScheduleFor(TripsData& trips, TripsType tripsType, co
         
         if(trips.arrivalIsEstimated.at(i)) {
             uint8_t trackingIndicatorXPos = arrivalStartXPos - SCHEDULE_BUS_ARRIVAL_TIME_AND_TRACKING_INDICATOR_MARGIN_PX;
-            drawTrackingBusIndicatorSymbol(_dma_display, trackingIndicatorXPos, row, _colorTextPrimary);
             _trackingBusIndicatorPositions.push_back(std::make_pair(trackingIndicatorXPos, row));
         }
 
@@ -274,36 +273,51 @@ void MatrixDisplay::TrackingBusIndicatorTaskFunction(void *pvParameters) {
 
     Serial.print("TrackingBusIndicatorTask INIT indicatorPositions=");
     Serial.println(indicatorPositions.size());
-    int brightnessSteps = 20;
-    int brightness = brightnessSteps;
+    int brightnessSteps = 10;
+    int brightness = 0;
     bool directionUp = false;
+    
     for(;;) {
-        uint16_t color = dma_display->color565(
-            (uint8_t)COLOR_TEXT_PRIMARY_R*(float)brightness/brightnessSteps,
-            (uint8_t)COLOR_TEXT_PRIMARY_G*(float)brightness/brightnessSteps,
-            (uint8_t)COLOR_TEXT_PRIMARY_B*(float)brightness/brightnessSteps
-        );
-        // Serial.println("Brightness is now " + String(brightness));
-
-        for (const auto &value : indicatorPositions)
-            drawTrackingBusIndicatorSymbol(dma_display, value.first, value.second, color);
-
-        if(directionUp)
-            brightness=brightness+2;
-        else
-            brightness--;
-
-        if(brightness == -1) {
-            brightness = 0;
-            vTaskDelay(pdMS_TO_TICKS(150));
-            directionUp = true;
-        } else if(brightness > brightnessSteps) {
-            brightness = brightnessSteps;
-            vTaskDelay(pdMS_TO_TICKS(2000));
-            directionUp = false;
-        } else {
-            vTaskDelay(pdMS_TO_TICKS(50));
+        brightness = 0;
+        while(brightness < brightnessSteps) {
+            uint16_t color = colorWithIntensity(dma_display, COLOR_RED_LIVE_R, 
+                                COLOR_RED_LIVE_G, COLOR_RED_LIVE_B, (float)brightness/brightnessSteps);
+            for (const auto &value : indicatorPositions)
+                dma_display->drawBitmap(value.first, value.second, icon_BusTrackingIndicatorCenter, 12, 6, color);
+            brightness=brightness+1;
+            vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_STEP_MS));
         }
+        vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_TIME_BETWEEN_PHASE_MS));
+        brightness = 0;
+        while(brightness < brightnessSteps) {
+            uint16_t color = colorWithIntensity(dma_display, COLOR_RED_LIVE_R, 
+                                COLOR_RED_LIVE_G, COLOR_RED_LIVE_B, (float)brightness/brightnessSteps);
+            for (const auto &value : indicatorPositions)
+                dma_display->drawBitmap(value.first, value.second, icon_BusTrackingIndicatorInner, 12, 6, color);
+            brightness=brightness+1;
+            vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_STEP_MS));
+        }
+        vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_TIME_BETWEEN_PHASE_MS));
+        brightness = 0;
+        while(brightness < brightnessSteps) {
+            uint16_t color = colorWithIntensity(dma_display, COLOR_RED_LIVE_R, 
+                                COLOR_RED_LIVE_G, COLOR_RED_LIVE_B, (float)brightness/brightnessSteps);
+            for (const auto &value : indicatorPositions)
+                dma_display->drawBitmap(value.first, value.second, icon_BusTrackingIndicatorOuter, 12, 6, color);
+            brightness=brightness+1;
+            vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_STEP_MS));
+        }
+        vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_TIME_AFTER_ANIMATION_FULL_MS));
+        brightness = brightnessSteps;
+        while(brightness >= 0) {
+            uint16_t color = colorWithIntensity(dma_display, COLOR_RED_LIVE_R, 
+                                COLOR_RED_LIVE_G, COLOR_RED_LIVE_B, (float)brightness/brightnessSteps);
+            for (const auto &value : indicatorPositions)
+                dma_display->drawBitmap(value.first, value.second, icon_BusTrackingIndicatorFull, 12, 6, color);
+            brightness=brightness-1;
+            vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_STEP_MS));
+        }
+        vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_TIME_IDLE_MS));
     }
 }
 
@@ -323,11 +337,8 @@ void MatrixDisplay::ExtraWeatherDataTaskFunction(void *pvParameters) {
         for(;;) {
             uint8_t posY = 13;
             uint8_t posX = 70;
-            uint16_t color = dma_display->color565(
-                (uint8_t)COLOR_TEXT_PRIMARY_R*(float)brightness/brightnessSteps,
-                (uint8_t)COLOR_TEXT_PRIMARY_G*(float)brightness/brightnessSteps,
-                (uint8_t)COLOR_TEXT_PRIMARY_B*(float)brightness/brightnessSteps
-            );
+            uint16_t color = colorWithIntensity(dma_display, COLOR_TEXT_PRIMARY_R, 
+                                COLOR_TEXT_PRIMARY_G, COLOR_TEXT_PRIMARY_B, (float)brightness/brightnessSteps);
 
             for(int i = page*dataPerPage; i<(dataPerPage*(page+1)); i++) {
                 const unsigned char* icon;
@@ -400,17 +411,6 @@ void MatrixDisplay::drawBusSign(BusType type, uint8_t x, uint8_t y, uint8_t widt
     _dma_display->print(text);
 }
 
-void MatrixDisplay::drawTrackingBusIndicatorSymbol(MatrixPanel_I2S_DMA* dma_display, uint8_t x, uint8_t y, uint16_t color) {
-    dma_display->drawFastVLine(x, y, 3, color);             // L
-    dma_display->drawFastHLine(x+1, y+2, 2, color);
-    dma_display->drawFastVLine(x+4, y, 3, color);           // I
-    dma_display->drawLine(x+6, y, x+8, y+2, color);         // V
-    dma_display->drawLine(x+9, y+1, x+10, y, color);
-    dma_display->drawFastHLine(x+12, y, 3, color);          // E
-    dma_display->drawFastHLine(x+12, y+1, 2, color);
-    dma_display->drawFastHLine(x+12, y+2, 3, color);
-}
-
 void MatrixDisplay::drawMinuteSymbol(uint8_t x, uint8_t y) {
     _dma_display->drawLine(x, y, x, y+2, _colorTextPrimary);
 }
@@ -447,4 +447,8 @@ void MatrixDisplay::fadeInScreen() {
         brightnessPercentage = brightnessPercentage + 10;
         delay(50);
     }
+}
+
+uint16_t MatrixDisplay::colorWithIntensity(MatrixPanel_I2S_DMA* dma_display, uint8_t r, uint8_t g, uint8_t b, float fraction) {
+    return dma_display->color565((uint8_t)r*fraction,(uint8_t)g*fraction,(uint8_t)b*fraction);
 }

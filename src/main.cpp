@@ -18,7 +18,7 @@ MatrixDisplay display;
 OCTranspoAPI octranspoAPI(&wifiClient, &httpClient);
 OpenMeteoAPI openMeteoAPI(&wifiClient, &httpClient);
 
-AppState appState = RoutesEastWest;
+AppState appState = Weather;
 uint16_t lightSensorValue = 0;
 uint32_t currentMillis = 0;
 uint32_t previousAppStateChangeMillis = 0;
