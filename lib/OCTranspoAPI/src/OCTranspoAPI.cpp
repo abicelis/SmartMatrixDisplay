@@ -39,6 +39,7 @@ TripsData OCTranspoAPI::fetchNextTripsFor(const String& stopNo, const String& ro
         result.routeLabels.push_back(routeLabel);
         result.busArrivalTimes.push_back(adjustedScheduleTime);
         result.arrivalIsEstimated.push_back(adjustmentAge != -1);
+        result.routeIsFrequent.push_back(routeIsFrequent(routeNumber));
     }
 
     _httpClient->end();
@@ -110,7 +111,7 @@ void OCTranspoAPI::appendTrip(TripsData& appendee, TripsData& appended, const in
     appendee.routeLabels.push_back(appended.routeLabels.at(pos));
     appendee.busArrivalTimes.push_back(appended.busArrivalTimes.at(pos));
     appendee.arrivalIsEstimated.push_back(appended.arrivalIsEstimated.at(pos));
-    appendee.routeIsFrequent.push_back(routeIsFrequent(appended.routeNumbers.at(pos)));
+    appendee.routeIsFrequent.push_back(appended.routeIsFrequent.at(pos));
 }
 
 boolean OCTranspoAPI::routeIsFrequent(int routeNumber) {
