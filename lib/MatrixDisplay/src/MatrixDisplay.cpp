@@ -32,7 +32,9 @@ void MatrixDisplay::drawBusScheduleFor(TripsData& trips, TripsType tripsType, co
 
     // Draw Title
     if(tripsType==VickyCommute) {
-        drawText(SCHEDULE_TITLE_X_POSITION, SCHEDULE_TITLE_Y_POSITION, "Morning Commute");
+        const char* title = "Vicky";
+        drawText(SCHEDULE_TITLE_X_POSITION, SCHEDULE_TITLE_Y_POSITION, title);
+        drawChar(SCHEDULE_TITLE_X_POSITION + getTextWidth(title)+2, SCHEDULE_TITLE_Y_POSITION, 0x03);
     } else if(tripsType==NorthSouth) {
         drawText(SCHEDULE_TITLE_X_POSITION, SCHEDULE_TITLE_Y_POSITION, "North-South");
     } else if(tripsType==EastWest) {
@@ -87,7 +89,7 @@ void MatrixDisplay::drawBusScheduleFor(TripsData& trips, TripsType tripsType, co
     }
 }
 
-void MatrixDisplay::drawWeatherFor(WeatherData& weatherData, const char* currentTime){
+void MatrixDisplay::drawWeatherFor(WeatherData& weatherData, const char* currentHHMM, const char* currentDateShort) {
     fadeOutScreen();
     clearScreen();
 
@@ -95,11 +97,12 @@ void MatrixDisplay::drawWeatherFor(WeatherData& weatherData, const char* current
     _dma_display->drawBitmap(SCHEDULE_BUS_X_POSITION, SCHEDULE_BUS_Y_POSITION, icon_Sun, 7, 9, _colorTextPrimary);
 
     // Draw Title
-    String weatherTypeStr = weatherTypeToString(weatherData.currentWeatherType);
-    drawText(SCHEDULE_TITLE_X_POSITION, SCHEDULE_TITLE_Y_POSITION, weatherTypeStr.c_str(), _colorTextPrimary);
+    // String weatherTypeStr = weatherTypeToString(weatherData.currentWeatherType);
+    // drawText(SCHEDULE_TITLE_X_POSITION, SCHEDULE_TITLE_Y_POSITION, weatherTypeStr.c_str(), _colorTextPrimary);
+    drawText(SCHEDULE_TITLE_X_POSITION, SCHEDULE_TITLE_Y_POSITION, currentDateShort, _colorTextPrimary);
 
     // Draw clock
-    drawText(SCHEDULE_BUS_CLOCK_X_POSITION, SCHEDULE_BUS_CLOCK_Y_POSITION, currentTime);
+    drawText(SCHEDULE_BUS_CLOCK_X_POSITION, SCHEDULE_BUS_CLOCK_Y_POSITION, currentHHMM);
 
     // Draw Horizontal rule
     _dma_display->drawFastHLine(SCHEDULE_HORIZONTAL_MARGIN_PX, SCHEDULE_TOP_HEADER_SIZE_PX-4,
@@ -168,6 +171,12 @@ void MatrixDisplay::drawWeatherFor(WeatherData& weatherData, const char* current
     Serial.println("ExtraWeatherDataTask LAUNCHED");
 }
 
+void MatrixDisplay::drawChar(uint8_t x, uint8_t y, uint8_t chaar) {
+    _dma_display->setTextColor(_colorTextPrimary);
+    _dma_display->setCursor(x, y);
+    _dma_display->write(chaar);
+}
+
 void MatrixDisplay::drawText(uint8_t x, uint8_t y, const char* text) {
     drawText(x, y, text, _colorTextPrimary);
 }
@@ -178,6 +187,9 @@ void MatrixDisplay::drawText(uint8_t x, uint8_t y, const char* text, uint16_t te
     _dma_display->print(text);
 }
 
+void MatrixDisplay::drawPixel(uint8_t x, uint8_t y) {
+    _dma_display->drawPixel(x, y, _colorTextPrimary);
+}
 void MatrixDisplay::setBrightness(uint8_t brightness) {
     if(brightness != _panelBrightness) {
         if(brightness > DISPLAY_BRIGHTNESS_MAX)

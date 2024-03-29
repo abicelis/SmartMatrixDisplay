@@ -22,9 +22,11 @@ class MatrixDisplay {
                uint16_t panel_res_y,
                int8_t panel_chain);
         void drawBusScheduleFor(TripsData& trips, TripsType tripsType, const char* currentTime);
-        void drawWeatherFor(WeatherData& weatherData, const char* currentTime);
+        void drawWeatherFor(WeatherData& weatherData, const char* currentHHMM, const char* currentDateShort);
+        void drawChar(uint8_t x, uint8_t y, uint8_t chaar);
         void drawText(uint8_t x, uint8_t y, const char* text);
         void drawText(uint8_t x, uint8_t y, const char* text, uint16_t textColor);
+        void drawPixel(uint8_t x, uint8_t y);
         void setBrightness(uint8_t brightness);
         void clearScreen();
 
