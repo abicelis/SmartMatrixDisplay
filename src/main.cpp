@@ -18,7 +18,7 @@ MatrixDisplay display;
 OCTranspoAPI octranspoAPI(&wifiClient, &httpClient);
 OpenMeteoAPI openMeteoAPI(&wifiClient, &httpClient);
 
-AppState appState = Weather;
+AppState appState = RoutesEastWest;
 uint16_t lightSensorValue = 0;
 uint32_t currentMillis = 0;
 uint32_t previousAppStateChangeMillis = 0;
@@ -60,7 +60,7 @@ void setup() {
     display.begin(R1_PIN, G1_PIN, B1_PIN, R2_PIN, G2_PIN, B2_PIN, A_PIN, B_PIN, C_PIN, D_PIN, E_PIN, LAT_PIN, OE_PIN, CLK_PIN, PANEL_RES_X, PANEL_RES_Y, PANEL_CHAIN);
 
     // WiFi
-    display.drawText(0, 0, "Init Wi-Fi");
+    display.drawPixel(0, 0);
     WiFi.mode(WIFI_STA);
     WiFi.begin(SSID_NAME, SSID_PASSWORD);
     Serial.print("Connecting to WiFi..");
@@ -72,7 +72,6 @@ void setup() {
     Serial.println("DONE.");
     Serial.print("Local IP: ");
     Serial.println(WiFi.localIP());
-    display.clearScreen();
 
     // Configure HTTPClient and WiFiClient
     wifiClient.setInsecure();
@@ -80,7 +79,7 @@ void setup() {
     httpClient.setTimeout(5000);
 
     // Configure NTP
-    display.drawText(0, 0, "Init NTP");
+    display.drawPixel(1, 0);
     Serial.print("Grabbing time from NTP..");
     configTime(NTP_GMT_OFFSET_SEC, NTP_DAYLIGHT_OFFSET_SEC, NTP_SERVER);
     time_t now;
@@ -89,7 +88,10 @@ void setup() {
         delay(100);
     }
     Serial.println("DONE.");
-    Serial.println("Time is " + String(currentTimePretty()));
+    char timeStringBuff[20];
+    currentDateFull(timeStringBuff, sizeof(timeStringBuff));
+    Serial.print("Time is ");
+    Serial.println(timeStringBuff);
     Serial.println("--------------------------------------\n");
     Serial.println("\nSTARTING:");
     display.clearScreen();
@@ -156,8 +158,10 @@ void loop() {
 
         newWeatherFetched = false;
         char currentHHMM[6];
-        currentHourMinute(currentHHMM, 6);
-        display.drawWeatherFor(newWeather, currentHHMM);
+        currentHourMinute(currentHHMM, sizeof(currentHHMM));
+        char currentDS[20];
+        currentDateShort(currentDS, sizeof(currentDS));
+        display.drawWeatherFor(newWeather, currentHHMM, currentDS);
     }
     
     currentMillis = millis(); // Refresh for next loop

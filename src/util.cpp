@@ -12,18 +12,23 @@ int currentHourOfDay() {
     int hour = timeinfo->tm_hour;
     return hour;
 }
-const char* currentTimePretty() {
+void currentDateFull(char* buffer, size_t bufferSize) {
     time_t now;
     time(&now);
-    char* timeStr = ctime(&now);
-    timeStr[strlen(timeStr) - 1] = '\0';  // Replace the newline with a null character
-    return timeStr;
+    struct tm * timeinfo = localtime(&now);
+    strftime (buffer, bufferSize, "%Y-%m-%d %H:%M", timeinfo);
+}
+void currentDateShort(char* buffer, size_t bufferSize) {
+    time_t now;
+    time(&now);
+    struct tm * timeinfo = localtime(&now);
+    strftime (buffer, bufferSize, "%a, %d %b", timeinfo);
 }
 void currentHourMinute(char* buffer, size_t bufferSize) {
     time_t now;
     time(&now);
     struct tm * timeinfo = localtime(&now);
-    strftime (buffer, bufferSize, "%H:%M",timeinfo);
+    strftime (buffer, bufferSize, "%H:%M", timeinfo);
 }
 
 void printTrips(const TripsData& trips) {
@@ -32,13 +37,18 @@ void printTrips(const TripsData& trips) {
         String type = "Scheduled";
         if(trips.arrivalIsEstimated.at(i) == true)
             type = "Estimated";
-        Serial.println("  " + String(trips.routeNumbers.at(i)) + " " + trips.routeLabels.at(i) + " in " + String(trips.busArrivalTimes.at(i)) + "min ("+ type +")");
+        Serial.println("  " + String(trips.routeNumbers.at(i)) + " " 
+            + trips.routeLabels.at(i) + " in " 
+            + String(trips.busArrivalTimes.at(i)) + "min ("+ type +")")
+            + " Frequent=" + String(trips.routeIsFrequent.at(i));
+
+        
     }
 }
 
 void updateAppState(AppState& appState, uint16_t lightSensorValue) {
     int hourOfDay = currentHourOfDay();
-    bool vickyCommute = hourOfDay == APPSTATE_VICKY_COMMUTE_HOUR_START || hourOfDay == APPSTATE_VICKY_COMMUTE_HOUR_END;
+    bool vickyCommute = hourOfDay >= APPSTATE_VICKY_COMMUTE_HOUR_START && hourOfDay <= APPSTATE_VICKY_COMMUTE_HOUR_END;
     bool sleeping = hourOfDay >= APPSTATE_SLEEPING_HOUR_START || hourOfDay <= APPSTATE_SLEEPING_HOUR_END;
     // bool sleeping = false;
 

@@ -2,7 +2,8 @@
 #define UTIL_H
 #include <Model.h>
 int currentHourOfDay();
-const char* currentTimePretty();
+void currentDateFull(char* buffer, size_t bufferSize);
+void currentDateShort(char* buffer, size_t bufferSize);
 void currentHourMinute(char* buffer, size_t bufferSize);
 void printTrips(const TripsData& trips);
 void updateAppState(AppState& appState, uint16_t lightSensorValue);
