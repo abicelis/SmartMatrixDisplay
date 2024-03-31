@@ -3,7 +3,8 @@
 #include <Arduino.h>
 #include <vector>
 
-enum AppState { RoutesVickyCommute, RoutesNorthSouth, RoutesEastWest, Weather, Sleeping };
+enum AppState { Idle, RoutesVickyCommute, RoutesNorthSouth, RoutesEastWest, Weather, Sleeping };
+enum TaskState { NotRunning, Running, Done };
 
 enum BusType { FrequentBus, LocalBus };
 enum TripsType { VickyCommute, NorthSouth, EastWest };

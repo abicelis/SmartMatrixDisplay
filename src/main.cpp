@@ -18,16 +18,15 @@ MatrixDisplay display;
 OCTranspoAPI octranspoAPI(&wifiClient, &httpClient);
 OpenMeteoAPI openMeteoAPI(&wifiClient, &httpClient);
 
-AppState appState = RoutesEastWest;
+
+AppState appState = Idle;
 uint16_t lightSensorValue = 0;
 uint32_t currentMillis = 0;
 uint32_t previousAppStateChangeMillis = 0;
-uint32_t previousTrackingBusIndicatorMillis = 0;
 uint32_t previousLightSensorUpdateMillis = 0;
-TaskHandle_t fetchTripsTaskHandle = NULL;
-TaskHandle_t fetchWeatherTaskHandle = NULL;
 
 TripsData newTrips;
+TaskHandle_t fetchTripsTaskHandle = NULL;
 bool newTripsFetched = false;
 void FetchTrips(void *pvParameters) {
     Serial.println("FetchTrips task started..");
@@ -42,6 +41,7 @@ void FetchTrips(void *pvParameters) {
 }
 
 WeatherData newWeather;
+TaskHandle_t fetchWeatherTaskHandle = NULL;
 bool newWeatherFetched = false;
 void FetchWeather(void *pvParameters) {
     Serial.println("FetchWeather task started..");
@@ -95,25 +95,36 @@ void setup() {
     Serial.println("--------------------------------------\n");
     Serial.println("\nSTARTING:");
     display.clearScreen();
+
+    currentMillis = millis();
+    previousAppStateChangeMillis = currentMillis - INTERVAL_APP_STATE;
+    previousAppStateChangeMillis = currentMillis - INTERVAL_APP_STATE;
+    lightSensorValue = 4000;                     // Start very bright
+    lightSensorValue *= LIGHT_SENSOR_SAMPLES;
 }
 
 void loop() {
-    if(currentMillis == 0 || currentMillis - previousLightSensorUpdateMillis >= INTERVAL_UPDATE_LIGHT_SENSOR) {
+    if(currentMillis - previousLightSensorUpdateMillis >= INTERVAL_UPDATE_LIGHT_SENSOR) {
+        uint16_t newSample = analogRead(A0);
         // Update LDR sensor value
-        lightSensorValue = analogRead(A0);
-        // Serial.print("Light sensor value ");
-        // Serial.println(lightSensorValue);
-        display.setBrightness(lightSensorToDisplayBrightness(lightSensorValue));
+        // Serial.print("lightSensorValue read " + String(newSample));
+        lightSensorValue -= (lightSensorValue / LIGHT_SENSOR_SAMPLES);
+        lightSensorValue += newSample;
+        // Serial.println(" lightSensorValue now is " + String(lightSensorValue) + " result=" + String(lightSensorValue/LIGHT_SENSOR_SAMPLES));
+
+        display.setBrightness(lightSensorToDisplayBrightness(lightSensorValue/LIGHT_SENSOR_SAMPLES));
         previousLightSensorUpdateMillis = currentMillis;
     }
 
-    if(currentMillis == 0 || currentMillis - previousAppStateChangeMillis >= INTERVAL_APP_STATE) {
-        updateAppState(appState, lightSensorValue);
+    if(currentMillis - previousAppStateChangeMillis >= INTERVAL_APP_STATE) {
+        updateAppState(appState, lightSensorValue/LIGHT_SENSOR_SAMPLES);
         Serial.println("AppState changed to '" + String(appState) + "'");
         Serial.print("AVAILABLE HEAP MEMORY =");
         Serial.println(xPortGetFreeHeapSize());
 
-        if(appState == Sleeping) {
+        if(appState == Idle) {
+            // Do nothing
+        }if(appState == Sleeping) {
             Serial.println("Sleeping now");
             // TODO - Something more interesting here? Maybe a cool animation?
             display.clearScreen();
@@ -121,16 +132,24 @@ void loop() {
         } else if(appState != Weather) {
             Serial.println("Launching FetchTrips task");
             BaseType_t result = xTaskCreatePinnedToCore(FetchTrips, "FetchTrips", STACK_DEPTH_TRIPS_TASK, NULL, 1, &fetchTripsTaskHandle, 0);
-            if(result == errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY) {
+            if(result == pdPASS) {
+                Serial.println("FetchTrips task launched successfully!");
+            } else if(result == errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY) {
                 Serial.print("ERROR: Task creation failed due to insufficient memory! HEAP MEM=");
                 Serial.println(xPortGetFreeHeapSize());
+            } else {
+                Serial.print("ERROR: Task creation failed!!!");
             }
         } else {
             Serial.println("Launching FetchWeather task");
             BaseType_t result = xTaskCreatePinnedToCore(FetchWeather, "FetchWeather", STACK_DEPTH_WEATHER_TASK, NULL, 1, &fetchWeatherTaskHandle, 0);
-            if(result == errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY) {
+            if(result == pdPASS) {
+                Serial.println("FetchWeather task launched successfully!");
+            } else if(result == errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY) {
                 Serial.print("ERROR: Task creation failed due to insufficient memory! HEAP MEM=");
                 Serial.println(xPortGetFreeHeapSize());
+            } else {
+                Serial.print("ERROR: Task creation failed!!!");
             }
         }
         previousAppStateChangeMillis = currentMillis;

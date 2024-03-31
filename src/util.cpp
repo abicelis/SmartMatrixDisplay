@@ -52,10 +52,11 @@ void updateAppState(AppState& appState, uint16_t lightSensorValue) {
     bool sleeping = hourOfDay >= APPSTATE_SLEEPING_HOUR_START || hourOfDay <= APPSTATE_SLEEPING_HOUR_END;
     // bool sleeping = false;
 
-    Serial.println("Hour of day=" + String(hourOfDay) + ", Sleeping=" 
-        + String(sleeping) + ", VCommute=" + String(vickyCommute) + ", LightSensor=" + String(lightSensorValue));
+    Serial.print("UpdateAppState - Hour of day=" + String(hourOfDay) + ", Sleeping=" 
+        + String(sleeping) + ", VCommute=" + String(vickyCommute) + ", LightSensor=" + String(lightSensorValue) + " ");
 
     if(vickyCommute) {
+        Serial.println("Result: VickyCommute");
         if(appState == Weather) {
             appState = RoutesVickyCommute;
         } else {
@@ -63,7 +64,9 @@ void updateAppState(AppState& appState, uint16_t lightSensorValue) {
         }
     } else if(sleeping || lightSensorValue <= APPSTATE_SLEEPING_LIGHT_SENSOR_VALUE_TRESHOLD) {
         appState = Sleeping;
+        Serial.println("Result: Sleeping");
     } else {
+        Serial.println("Result: WeatherOrRoutes");
         if (appState == Weather) {
             appState = RoutesNorthSouth;
         } else if (appState == RoutesNorthSouth) {
