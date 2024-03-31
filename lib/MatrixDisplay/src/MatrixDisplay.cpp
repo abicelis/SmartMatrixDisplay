@@ -21,6 +21,9 @@ void MatrixDisplay::begin(int8_t r1_pin, int8_t g1_pin, int8_t b1_pin, int8_t r2
     _dma_display->setBrightness8(_panelBrightness);
     _dma_display->clearScreen();
     _dma_display->fillScreen(_colorBlack);
+
+    xTaskCreatePinnedToCore(BrightnessTaskFunction, "BrightnessTaskFunction", 
+        1024, this, 1, &brightnessTaskHandle, 1);
 }
 
 void MatrixDisplay::drawBusScheduleFor(TripsData& trips, TripsType tripsType, const char* currentTime) {
@@ -190,44 +193,52 @@ void MatrixDisplay::drawText(uint8_t x, uint8_t y, const char* text, uint16_t te
 void MatrixDisplay::drawPixel(uint8_t x, uint8_t y) {
     _dma_display->drawPixel(x, y, _colorTextPrimary);
 }
+
 void MatrixDisplay::setBrightness(uint8_t brightness) {
-    if(brightness != _panelBrightness) {
-        if(brightness > DISPLAY_BRIGHTNESS_MAX)
-            _panelBrightness = DISPLAY_BRIGHTNESS_MAX;
-        else if (brightness < DISPLAY_BRIGHTNESS_MIN)
-            _panelBrightness = DISPLAY_BRIGHTNESS_MIN;
-        else
-            _panelBrightness = brightness;
+    uint8_t clampedBrightness = brightness;
+    // Clamp brightness
+    if(clampedBrightness > DISPLAY_BRIGHTNESS_MAX)
+        clampedBrightness = DISPLAY_BRIGHTNESS_MAX;
+    else if (clampedBrightness < DISPLAY_BRIGHTNESS_MIN)
+        clampedBrightness = DISPLAY_BRIGHTNESS_MIN;
+    else
+        clampedBrightness = brightness;
 
-        _dma_display->setBrightness8(_panelBrightness);
 
-        Serial.print("Panel brightness set to ");
-        Serial.println(_panelBrightness);
+    if(clampedBrightness != _targetBrightness) {
+        _targetBrightness = clampedBrightness;
+        
+        #ifdef DEBUG
+        Serial.print("Panel brightness target set to ");
+        Serial.println(_targetBrightness);
+        #endif
     }
 }
 
 void MatrixDisplay::clearScreen() {
     if( trackingBusIndicatorTaskHandle != NULL ) {
-        Serial.println("TrackingBusIndicatorTask DELETED");
-        vTaskDelete( trackingBusIndicatorTaskHandle );
+        if(eTaskGetState(trackingBusIndicatorTaskHandle) != eDeleted) {
+            Serial.println("TrackingBusIndicatorTask DELETED");
+            vTaskDelete( trackingBusIndicatorTaskHandle );
+            
+            #ifdef DEBUG
+            UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(trackingBusIndicatorTaskHandle);
+            Serial.println("TrackingBusIndicatorTask stack used this memory: " + String(uxHighWaterMark));
+            #endif
+        }
         trackingBusIndicatorTaskHandle = nullptr;
-
-        #ifdef DEBUG
-        UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(trackingBusIndicatorTaskHandle);
-        Serial.println("TrackingBusIndicatorTask stack used this memory: " + String(uxHighWaterMark));
-        #endif
-
     }
     if( extraWeatherDataTaskHandle != NULL ) {
-        Serial.println("ExtraWeatherDataTaskFunction DELETED");
-        vTaskDelete( extraWeatherDataTaskHandle );
+        if(eTaskGetState(extraWeatherDataTaskHandle) != eDeleted) {
+            Serial.println("ExtraWeatherDataTaskFunction DELETED");
+            vTaskDelete( extraWeatherDataTaskHandle );
+
+            #ifdef DEBUG
+            UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(extraWeatherDataTaskHandle);
+            Serial.println("ExtraWeatherDataTaskFunction stack used this memory: " + String(uxHighWaterMark));
+            #endif
+        }
         extraWeatherDataTaskHandle = nullptr;
-
-        #ifdef DEBUG
-        UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(extraWeatherDataTaskHandle);
-        Serial.println("ExtraWeatherDataTaskFunction stack used this memory: " + String(uxHighWaterMark));
-        #endif
-
     }
     _dma_display->clearScreen();
 }
@@ -398,6 +409,32 @@ void MatrixDisplay::ExtraWeatherDataTaskFunction(void *pvParameters) {
             page = 0;
     }
 }
+
+void MatrixDisplay::BrightnessTaskFunction(void *pvParameters) {
+    MatrixDisplay* instance = static_cast<MatrixDisplay*>(pvParameters);
+    Serial.print("BrightnessTaskFunction INIT");
+
+    uint8_t currentBrightness = instance->_panelBrightness;
+    for (;;) {
+        while(currentBrightness != instance->_targetBrightness) {
+            if(instance->_targetBrightness > currentBrightness)
+                currentBrightness ++;
+            else
+                currentBrightness --;
+
+            #ifdef DEBUG
+            // Serial.print("BrightnessTaskFunction LOOP, currentBrightness=");
+            // Serial.println(currentBrightness);
+            #endif
+
+            instance->_panelBrightness = currentBrightness;
+            instance->_dma_display->setBrightness8(currentBrightness);
+            vTaskDelay(pdMS_TO_TICKS(10));
+        }
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+}
+
 
 void MatrixDisplay::drawBusSign(BusType type, uint8_t x, uint8_t y, uint8_t width, const char* text) {
     int height = 9;

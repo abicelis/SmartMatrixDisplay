@@ -50,6 +50,11 @@ class MatrixDisplay {
         std::vector<std::pair<ExtraWeatherDataType, String>> _extraWeatherData;
         TaskHandle_t extraWeatherDataTaskHandle = NULL;
         static void ExtraWeatherDataTaskFunction(void *pvParameters);
+
+        uint8_t _targetBrightness;
+        TaskHandle_t brightnessTaskHandle = NULL;
+        static void BrightnessTaskFunction(void *pvParameters);
+
         void drawBusSign(BusType type, uint8_t x, uint8_t y, uint8_t width, const char* text);
         void drawMinuteSymbol(uint8_t x, uint8_t y);
         void shortenRouteLabel(String& label);
