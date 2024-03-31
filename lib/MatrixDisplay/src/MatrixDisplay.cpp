@@ -335,7 +335,7 @@ void MatrixDisplay::TrackingBusIndicatorTaskFunction(void *pvParameters) {
 
 void MatrixDisplay::ExtraWeatherDataTaskFunction(void *pvParameters) {
     MatrixDisplay* instance = static_cast<MatrixDisplay*>(pvParameters);
-    std::vector<std::pair<ExtraWeatherDataType, String>> extraWeatherData = instance->_extraWeatherData;
+    std::vector<std::pair<ExtraWeatherDataType, String>>& extraWeatherData = instance->_extraWeatherData;
     MatrixPanel_I2S_DMA* dma_display = instance->_dma_display;
     Serial.println("WeatherInfoTaskFunction INIT");
 
