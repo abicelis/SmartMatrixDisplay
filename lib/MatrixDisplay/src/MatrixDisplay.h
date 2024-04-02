@@ -2,6 +2,7 @@
 #define MATRIX_DISPLAY_H
 #include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>
 #include <Model.h>
+#include <RouteGroupData.h>
 class MatrixDisplay {
     public:
         void begin(int8_t r1_pin,
@@ -21,7 +22,7 @@ class MatrixDisplay {
                uint16_t panel_res_x,
                uint16_t panel_res_y,
                int8_t panel_chain);
-        void drawBusScheduleFor(TripsData& trips, TripsType tripsType, const char* currentTime);
+        void drawBusScheduleFor(RouteGroupData& data, RouteGroupType tripsType, const char* currentTime);
         void drawWeatherFor(WeatherData& weatherData, const char* currentHHMM, const char* currentDateShort);
         void drawChar(uint8_t x, uint8_t y, uint8_t chaar);
         void drawText(uint8_t x, uint8_t y, const char* text);
@@ -55,9 +56,9 @@ class MatrixDisplay {
         TaskHandle_t brightnessTaskHandle = NULL;
         static void BrightnessTaskFunction(void *pvParameters);
 
-        void drawBusSign(BusType type, uint8_t x, uint8_t y, uint8_t width, const char* text);
+        void drawRouteSign(RouteType type, uint8_t x, uint8_t y, uint8_t width, const char* text);
         void drawMinuteSymbol(uint8_t x, uint8_t y);
-        void shortenRouteLabel(String& label);
+        String shortenRouteDestination(const String& label);
         uint8_t getTextWidth(const char *str);
         uint8_t getRightAlignStartingPoint(const char* str, int8_t xPosition);
         void fadeOutScreen();

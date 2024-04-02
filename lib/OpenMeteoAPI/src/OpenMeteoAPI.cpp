@@ -12,43 +12,50 @@ OpenMeteoAPI::OpenMeteoAPI(WiFiClientSecure* wifiClient, HTTPClient* httpClient)
 }
 
 WeatherData OpenMeteoAPI::fetchCurrentWeather() {
-    _httpClient->begin(*_wifiClient, OPEN_METEO_API_ENDPOINT);
-    _httpClient->GET();
-
-    JsonDocument doc;
-    deserializeJson(doc, _httpClient->getStream());
-
     WeatherData result;
-
-    // String out = "";
-    // serializeJsonPretty(doc, out);
-    // Serial.println(out);
-
-    long sunriseTimestamp = doc["daily"]["sunrise"][0].as<long>();
-    long sunsetTimestamp = doc["daily"]["sunset"][0].as<long>();
-    time_t nowTimestamp;
-    time(&nowTimestamp);
-
-    result.currentWeatherType = WMOCodeToWeatherType(doc["current"]["weather_code"].as<int>());
-    result.currentTemperatureCelcius = String(doc["current"]["temperature_2m"].as<int>());
-    result.currentApparentTemperatureCelcius = String(doc["current"]["apparent_temperature"].as<int>());
-    result.dailyTemperatureMinCelcius = String(doc["daily"]["temperature_2m_min"][0].as<int>());
-    result.dailyTemperatureMaxCelcius = String(doc["daily"]["temperature_2m_max"][0].as<int>());
-    result.isDaytime = (nowTimestamp >= sunriseTimestamp && nowTimestamp <= sunsetTimestamp);
+    _httpClient->begin(*_wifiClient, OPEN_METEO_API_ENDPOINT);
     
-    result.extraWeatherData.push_back(std::make_pair(CurrentRelativeHumidity, String(doc["current"]["relative_humidity_2m"].as<int>()) + " %"));
-    result.extraWeatherData.push_back(std::make_pair(CurrentWindSpeed, String(doc["current"]["wind_speed_10m"].as<int>()) + " Kmh"));
-    result.extraWeatherData.push_back(std::make_pair(DailyPrecipitation, String(doc["daily"]["precipitation_sum"][0].as<int>()) + " mm"));
+    int tries = OPEN_METEO_API_ENDPOINT_TRIES;
+    int httpCode = -1;
+    while (httpCode != 200 && tries > 0) {
+        httpCode = _httpClient->GET();
+        tries--;
+    }
 
-    result.extraWeatherData.push_back(std::make_pair(Sunrise, TimeStringFromUnixTimestamp(sunriseTimestamp)));
-    result.extraWeatherData.push_back(std::make_pair(Sunset, TimeStringFromUnixTimestamp(sunsetTimestamp)));
-    result.extraWeatherData.push_back(std::make_pair(MaxUVIndex, UVIndexCodeToString(doc["daily"]["uv_index_max"][0].as<int>())));
-    
-    // Serial.println("Extra weather data:");
-    // for(const auto &value: result.extraWeatherData) {
-        // Serial.println(value.second);
-    // }
+    if(httpCode == 200) {
+        JsonDocument doc;
+        deserializeJson(doc, _httpClient->getStream());
 
+        // String out = "";
+        // serializeJsonPretty(doc, out);
+        // Serial.println(out);
+
+        long sunriseTimestamp = doc["daily"]["sunrise"][0].as<long>();
+        long sunsetTimestamp = doc["daily"]["sunset"][0].as<long>();
+        time_t nowTimestamp;
+        time(&nowTimestamp);
+
+        result.setCorrectly = true;
+        result.currentWeatherType = WMOCodeToWeatherType(doc["current"]["weather_code"].as<int>());
+        result.currentTemperatureCelcius = String(doc["current"]["temperature_2m"].as<int>());
+        result.currentApparentTemperatureCelcius = String(doc["current"]["apparent_temperature"].as<int>());
+        result.dailyTemperatureMinCelcius = String(doc["daily"]["temperature_2m_min"][0].as<int>());
+        result.dailyTemperatureMaxCelcius = String(doc["daily"]["temperature_2m_max"][0].as<int>());
+        result.isDaytime = (nowTimestamp >= sunriseTimestamp && nowTimestamp <= sunsetTimestamp);
+        
+        result.extraWeatherData.push_back(std::make_pair(CurrentRelativeHumidity, String(doc["current"]["relative_humidity_2m"].as<int>()) + " %"));
+        result.extraWeatherData.push_back(std::make_pair(CurrentWindSpeed, String(doc["current"]["wind_speed_10m"].as<int>()) + " Kmh"));
+        result.extraWeatherData.push_back(std::make_pair(DailyPrecipitation, String(doc["daily"]["precipitation_sum"][0].as<int>()) + " mm"));
+
+        result.extraWeatherData.push_back(std::make_pair(Sunrise, TimeStringFromUnixTimestamp(sunriseTimestamp)));
+        result.extraWeatherData.push_back(std::make_pair(Sunset, TimeStringFromUnixTimestamp(sunsetTimestamp)));
+        result.extraWeatherData.push_back(std::make_pair(MaxUVIndex, UVIndexCodeToString(doc["daily"]["uv_index_max"][0].as<int>())));
+        
+        // Serial.println("Extra weather data:");
+        // for(const auto &value: result.extraWeatherData) {
+            // Serial.println(value.second);
+        // }
+    }
     _httpClient->end();
     return result;
 }

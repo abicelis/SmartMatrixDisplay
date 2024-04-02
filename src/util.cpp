@@ -31,22 +31,31 @@ void currentHourMinute(char* buffer, size_t bufferSize) {
     strftime (buffer, bufferSize, "%H:%M", timeinfo);
 }
 
-void printTrips(const TripsData& trips) {
+void printTrips(const RouteGroupData& data) {
     Serial.println("Trips:");
-    for(int i = 0; i < trips.routeLabels.size(); i++) {
-        String type = "Scheduled";
-        if(trips.arrivalIsEstimated.at(i) == true)
-            type = "Estimated";
-        Serial.println("  " + String(trips.routeNumbers.at(i)) + " " 
-            + trips.routeLabels.at(i) + " in " 
-            + String(trips.busArrivalTimes.at(i)) + "min ("+ type +")")
-            + " Frequent=" + String(trips.routeIsFrequent.at(i));
+    for(const auto &destination: data.routeDestinations) {
+        String frequent = destination.routeType == FrequentRoute ? "Yes" : "No";
+        Serial.print("  " + destination.routeNumber 
+            + " " + destination.routeDestination 
+            + " (Frequent=" + frequent + ") in: ");
 
-        
+        for(const auto &trip: destination.trips) {
+            String estimated = trip.arrivalIsEstimated ? "*" : "";
+            Serial.print(estimated + String(trip.arrivalTime) + "min, ");
+        }
+        Serial.println("");
     }
 }
 
 void updateAppState(AppState& appState, uint16_t lightSensorValue) {
+    // appState = Weather;
+
+    // if (appState == RoutesNorthSouth) {
+    //     appState = RoutesEastWest;
+    // } else {
+    //     appState = RoutesNorthSouth;
+    // }
+
     int hourOfDay = currentHourOfDay();
     bool vickyCommute = hourOfDay >= APPSTATE_VICKY_COMMUTE_HOUR_START && hourOfDay <= APPSTATE_VICKY_COMMUTE_HOUR_END;
     bool sleeping = hourOfDay >= APPSTATE_SLEEPING_HOUR_START || hourOfDay <= APPSTATE_SLEEPING_HOUR_END;
@@ -77,15 +86,15 @@ void updateAppState(AppState& appState, uint16_t lightSensorValue) {
     }
 }
 
-TripsType appStateToTripsType(AppState appState) {
-    TripsType tripsType = VickyCommute;
+RouteGroupType appStateToRouteGroupType(AppState appState) {
+    RouteGroupType type = VickyCommute;
 
     if(appState == RoutesNorthSouth)
-        tripsType = NorthSouth;
+        type = NorthSouth;
     else if(appState == RoutesEastWest)
-        tripsType = EastWest;
+        type = EastWest;
 
-    return tripsType;
+    return type;
 }
 
 /**

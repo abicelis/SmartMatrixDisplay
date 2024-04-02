@@ -2,17 +2,18 @@
 #define OCTranspoAPI_h
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
-#include <Model.h>
+#include <RouteGroupData.h>
+
 class OCTranspoAPI {
     public:
         OCTranspoAPI(WiFiClientSecure* wifiClient, HTTPClient* httpClient);
-        TripsData fetchNextTripsFor(const String& stopNo, const String& routeNo);
-        TripsData fetchNextTrips(TripsType tripsType);
+        RouteGroupData fetchTrips(RouteGroupType type);
     private:
         WiFiClientSecure* _wifiClient;
         HTTPClient* _httpClient;
-        void mergeAndSortTrips(TripsData& result, TripsData& A, TripsData& B);
-        void appendTrip(TripsData& appendee, TripsData& appended, const int& pos);
-        boolean routeIsFrequent(int routeNumber);
+        void fetchTripsFor(RouteGroupData& data, const String& stopNo, const String& routeNo);
+        void addTrip(RouteGroupData& data, String& routeNumber, String& routeDestination, uint8_t arrivalTime, bool arrivalIsEstimated);
+        void sortTrips(RouteGroupData& data);
+        RouteType getRouteType(String& routeNumber);
 };
 #endif

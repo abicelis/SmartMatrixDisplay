@@ -6,18 +6,8 @@
 enum AppState { Idle, RoutesVickyCommute, RoutesNorthSouth, RoutesEastWest, Weather, Sleeping };
 enum TaskState { NotRunning, Running, Done };
 
-enum BusType { FrequentBus, LocalBus };
-enum TripsType { VickyCommute, NorthSouth, EastWest };
-
-struct TripsData {
-    std::vector<int> routeNumbers;
-    std::vector<String> routeLabels;
-    std::vector<int> busArrivalTimes;        // Estimated or scheduled bus time of arrival.
-    std::vector<bool> arrivalIsEstimated;    // True  -> busArrivalTime is estimated (Bus tracked via GPS).
-                                             // False -> busArrivalTime is scheduled.
-    std::vector<bool> routeIsFrequent;       // True -> Route is Frequent. False -> Route is Local
-                                             // https://www.octranspo.com/en/our-services/bus-o-train-network/service-types/
-};
+enum RouteType { FrequentRoute, LocalRoute };
+enum RouteGroupType { VickyCommute, NorthSouth, EastWest };
 
 enum WeatherType { Clear, Cloudy, Drizzle, Showers, Rain, FreezingRain, Snow, Thunderstorm, Fog, Hail, Mist, SmokeOrHaze, Invalid };
 inline String weatherTypeToString(WeatherType weatherType) {
@@ -42,6 +32,7 @@ inline String weatherTypeToString(WeatherType weatherType) {
 enum UVIndex { Low, Moderate, High, VeryHigh, Extreme };
 enum ExtraWeatherDataType { CurrentRelativeHumidity, CurrentWindSpeed, DailyPrecipitation, Sunrise, Sunset, MaxUVIndex };
 struct WeatherData {
+    bool setCorrectly;
     WeatherType currentWeatherType;
     String currentTemperatureCelcius;
     String currentApparentTemperatureCelcius;                    // "Feels like" temp.

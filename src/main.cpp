@@ -18,22 +18,21 @@ MatrixDisplay display;
 OCTranspoAPI octranspoAPI(&wifiClient, &httpClient);
 OpenMeteoAPI openMeteoAPI(&wifiClient, &httpClient);
 
-
 AppState appState = Idle;
 uint16_t lightSensorValue = 0;
 uint32_t currentMillis = 0;
 uint32_t previousAppStateChangeMillis = 0;
 uint32_t previousLightSensorUpdateMillis = 0;
 
-TripsData newTrips;
+RouteGroupData routeGroupData;
 TaskHandle_t fetchTripsTaskHandle = NULL;
 bool newTripsFetched = false;
 void FetchTrips(void *pvParameters) {
     Serial.println("FetchTrips task started..");
-    newTrips = octranspoAPI.fetchNextTrips(appStateToTripsType(appState));
+    routeGroupData = octranspoAPI.fetchTrips(appStateToRouteGroupType(appState));
 
     #ifdef DEBUG
-    printTrips(newTrips);
+    printTrips(routeGroupData);
     #endif
     
     newTripsFetched = true;
@@ -163,9 +162,15 @@ void loop() {
         #endif
 
         newTripsFetched = false;
-        char currentHHMM[6];
-        currentHourMinute(currentHHMM, 6);
-        display.drawBusScheduleFor(newTrips, appStateToTripsType(appState), currentHHMM);
+        if(routeGroupData.routeDestinations.size() == 0) {
+            #ifdef DEBUG
+            Serial.println("Warning: FetchTrips task returned no trips!");
+            #endif
+        } else {
+            char currentHHMM[6];
+            currentHourMinute(currentHHMM, 6);
+            display.drawBusScheduleFor(routeGroupData, appStateToRouteGroupType(appState), currentHHMM);
+        }
     }
 
     // Evaluate if FetchTrips task is done
@@ -176,11 +181,17 @@ void loop() {
         #endif
 
         newWeatherFetched = false;
-        char currentHHMM[6];
-        currentHourMinute(currentHHMM, sizeof(currentHHMM));
-        char currentDS[20];
-        currentDateShort(currentDS, sizeof(currentDS));
-        display.drawWeatherFor(newWeather, currentHHMM, currentDS);
+        if(!newWeather.setCorrectly) {
+            #ifdef DEBUG
+            Serial.println("Warning: FetchWeather task returned no data!");
+            #endif
+        } else {
+            char currentHHMM[6];
+            currentHourMinute(currentHHMM, sizeof(currentHHMM));
+            char currentDS[20];
+            currentDateShort(currentDS, sizeof(currentDS));
+            display.drawWeatherFor(newWeather, currentHHMM, currentDS);
+        }
     }
     
     currentMillis = millis(); // Refresh for next loop

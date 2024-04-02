@@ -12,6 +12,7 @@
 
 // OpenMeteoAPI
 #define OPEN_METEO_API_ENDPOINT "https://api.open-meteo.com/v1/forecast?latitude=45.354305&longitude=-75.73605&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,snowfall,weather_code,wind_speed_10m,wind_gusts_10m&daily=weather_code&timeformat=unixtime&timezone=America%2FNew_York&forecast_days=1"
+#define OPEN_METEO_API_ENDPOINT_TRIES 2
 
 // NTP
 #define NTP_SERVER "pool.ntp.org"
@@ -30,7 +31,8 @@
 #define APPSTATE_VICKY_COMMUTE_HOUR_END 7
 
 // UI - SCHEDULE PAGE
-#define SCHEDULE_MAX_TRIPS 4
+#define SCHEDULE_MAX_ROUTES 4
+#define SCHEDULE_MAX_TRIPS 2
 #define SCHEDULE_TOP_HEADER_SIZE_PX 15
 #define SCHEDULE_HORIZONTAL_MARGIN_PX 2
 #define SCHEDULE_VERTICAL_SPACING_BETWEEN_BUSES_PX 12
@@ -38,7 +40,8 @@
 #define SCHEDULE_BUS_SIGN_AND_BUS_LABEL_MARGIN_PX 4
 
 #define SCHEDULE_BUS_MINUTE_SYMBOL_AND_ARRIVAL_TIME_MARGIN_PX 1
-#define SCHEDULE_BUS_ARRIVAL_TIME_AND_TRACKING_INDICATOR_MARGIN_PX 14
+#define SCHEDULE_BUS_ARRIVAL_TIME_AND_TRACKING_INDICATOR_MARGIN_PX 2
+#define SCHEDULE_BUS_BETWEEN_TRIPS_SPACING_PX 22
 
 #define SCHEDULE_TRACKING_INDICATOR_ANIMATION_STEP_MS 25
 #define SCHEDULE_TRACKING_INDICATOR_ANIMATION_TIME_BETWEEN_PHASE_MS 50
