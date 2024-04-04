@@ -100,7 +100,7 @@ void MatrixDisplay::drawBusScheduleFor(RouteGroupData& data, RouteGroupType trip
     }
 }
 
-void MatrixDisplay::drawWeatherFor(WeatherData& weatherData, const char* currentHHMM, const char* currentDateShort) {
+void MatrixDisplay::drawWeatherFor(WeatherData& weatherData, const char* currentTime, const char* currentDateShort) {
     fadeOutScreen();
     clearScreen();
 
@@ -113,7 +113,7 @@ void MatrixDisplay::drawWeatherFor(WeatherData& weatherData, const char* current
     drawText(SCHEDULE_TITLE_X_POSITION, SCHEDULE_TITLE_Y_POSITION, currentDateShort, _colorTextPrimary);
 
     // Draw clock
-    drawText(SCHEDULE_BUS_CLOCK_X_POSITION, SCHEDULE_BUS_CLOCK_Y_POSITION, currentHHMM);
+    drawText(SCHEDULE_BUS_CLOCK_X_POSITION, SCHEDULE_BUS_CLOCK_Y_POSITION, currentTime);
 
     // Draw Horizontal rule
     _dma_display->drawFastHLine(SCHEDULE_HORIZONTAL_MARGIN_PX, SCHEDULE_TOP_HEADER_SIZE_PX-4,
@@ -182,6 +182,12 @@ void MatrixDisplay::drawWeatherFor(WeatherData& weatherData, const char* current
     Serial.println("ExtraWeatherDataTask LAUNCHED");
 }
 
+void MatrixDisplay::drawClock(const char* currentTime) {
+    _dma_display->setTextColor(_colorTextPrimary, _colorBlack);
+    _dma_display->setCursor(SCHEDULE_BUS_CLOCK_X_POSITION, SCHEDULE_BUS_CLOCK_Y_POSITION);
+    _dma_display->print(currentTime);
+}
+
 void MatrixDisplay::drawChar(uint8_t x, uint8_t y, uint8_t chaar) {
     _dma_display->setTextColor(_colorTextPrimary);
     _dma_display->setCursor(x, y);
@@ -200,6 +206,14 @@ void MatrixDisplay::drawText(uint8_t x, uint8_t y, const char* text, uint16_t te
 
 void MatrixDisplay::drawPixel(uint8_t x, uint8_t y) {
     _dma_display->drawPixel(x, y, _colorTextPrimary);
+}
+
+void MatrixDisplay::drawLoadingBar(uint8_t widthPixels) {
+    _dma_display->drawRoundRect(14, LOADING_PAGE_BAR_Y_POSITION_PX, 100, 
+    LOADING_PAGE_BAR_THICKNESS_PX, LOADING_PAGE_BAR_CORNER_RADIUS_PX, _colorTextPrimary);
+
+    _dma_display->fillRoundRect(14, LOADING_PAGE_BAR_Y_POSITION_PX, widthPixels, 
+    LOADING_PAGE_BAR_THICKNESS_PX, LOADING_PAGE_BAR_CORNER_RADIUS_PX, _colorTextPrimary);
 }
 
 void MatrixDisplay::setBrightness(uint8_t brightness) {

@@ -18,11 +18,13 @@ MatrixDisplay display;
 OCTranspoAPI octranspoAPI(&wifiClient, &httpClient);
 OpenMeteoAPI openMeteoAPI(&wifiClient, &httpClient);
 
+bool initialPageLoaded = false;
 AppState appState = Idle;
 uint16_t lightSensorValue = 0;
 uint32_t currentMillis = 0;
 uint32_t previousAppStateChangeMillis = 0;
 uint32_t previousLightSensorUpdateMillis = 0;
+uint32_t previousClockUpdateMillis = 0;
 
 RouteGroupData routeGroupData;
 TaskHandle_t fetchTripsTaskHandle = NULL;
@@ -52,24 +54,29 @@ void FetchWeather(void *pvParameters) {
 void setup() {
     Serial.begin(115200);
     delay(300);
-    Serial.println("\nSETUP");
+    Serial.println("\n\n     SMART LED MATRIX DISPLAY");
     Serial.println("-----------------------------------");
-
+    Serial.println("-----------------------------------");
+    
     // Display
     display.begin(R1_PIN, G1_PIN, B1_PIN, R2_PIN, G2_PIN, B2_PIN, A_PIN, B_PIN, C_PIN, D_PIN, E_PIN, LAT_PIN, OE_PIN, CLK_PIN, PANEL_RES_X, PANEL_RES_Y, PANEL_CHAIN);
 
     // WiFi
-    display.drawPixel(0, 0);
+    display.drawText(28, 23, "Initializing");
+    uint8_t loadingPercent = 10;
+    display.drawLoadingBar(loadingPercent);
     WiFi.mode(WIFI_STA);
     WiFi.begin(SSID_NAME, SSID_PASSWORD);
     Serial.print("Connecting to WiFi..");
 
     while(WiFi.status() != WL_CONNECTED) {
         Serial.print(".");
-        delay(100);
+        delay(200);
+        if(loadingPercent <= 20)
+            display.drawLoadingBar(++loadingPercent);
     }
     Serial.println("DONE.");
-    Serial.print("Local IP: ");
+    Serial.print("  > Local IP: ");
     Serial.println(WiFi.localIP());
 
     // Configure HTTPClient and WiFiClient
@@ -78,22 +85,27 @@ void setup() {
     httpClient.setTimeout(5000);
 
     // Configure NTP
-    display.drawPixel(1, 0);
+    loadingPercent = 30;
+    display.drawLoadingBar(loadingPercent);
     Serial.print("Grabbing time from NTP..");
     configTime(NTP_GMT_OFFSET_SEC, NTP_DAYLIGHT_OFFSET_SEC, NTP_SERVER);
     time_t now;
     while (time(&now) < 1000) { // Wait until NTP request completes
         Serial.print(".");
-        delay(100);
+        delay(200);
+        if(loadingPercent <= 50)
+            display.drawLoadingBar(++loadingPercent);
     }
     Serial.println("DONE.");
     char timeStringBuff[20];
     currentDateFull(timeStringBuff, sizeof(timeStringBuff));
-    Serial.print("Time is ");
+    Serial.print("  > Time is ");
     Serial.println(timeStringBuff);
-    Serial.println("--------------------------------------\n");
-    Serial.println("\nSTARTING:");
-    display.clearScreen();
+    Serial.println("--------------------------------------");
+    Serial.println("\n\nSTARTING:");
+    
+    loadingPercent = 70;
+    display.drawLoadingBar(loadingPercent);
 
     currentMillis = millis();
     previousAppStateChangeMillis = currentMillis - INTERVAL_APP_STATE;
@@ -113,6 +125,13 @@ void loop() {
 
         display.setBrightness(lightSensorToDisplayBrightness(lightSensorValue/LIGHT_SENSOR_SAMPLES));
         previousLightSensorUpdateMillis = currentMillis;
+    }
+
+    if(initialPageLoaded && currentMillis - previousClockUpdateMillis >= INTERVAL_UPDATE_CLOCK) {
+        char currentTime[6];
+        currentHourMinute(currentTime, sizeof(currentTime));
+        display.drawClock(currentTime);
+        previousClockUpdateMillis = currentMillis;
     }
 
     if(currentMillis - previousAppStateChangeMillis >= INTERVAL_APP_STATE) {
@@ -167,9 +186,10 @@ void loop() {
             Serial.println("Warning: FetchTrips task returned no trips!");
             #endif
         } else {
-            char currentHHMM[6];
-            currentHourMinute(currentHHMM, 6);
-            display.drawBusScheduleFor(routeGroupData, appStateToRouteGroupType(appState), currentHHMM);
+            char currentTime[6];
+            currentHourMinute(currentTime, 6);
+            display.drawBusScheduleFor(routeGroupData, appStateToRouteGroupType(appState), currentTime);
+            initialPageLoaded = true;
         }
     }
 
@@ -186,13 +206,16 @@ void loop() {
             Serial.println("Warning: FetchWeather task returned no data!");
             #endif
         } else {
-            char currentHHMM[6];
-            currentHourMinute(currentHHMM, sizeof(currentHHMM));
-            char currentDS[20];
-            currentDateShort(currentDS, sizeof(currentDS));
-            display.drawWeatherFor(newWeather, currentHHMM, currentDS);
+            char currentTime[6];
+            currentHourMinute(currentTime, sizeof(currentTime));
+            char currentDate[20];
+            currentDateShort(currentDate, sizeof(currentDate));
+            display.drawWeatherFor(newWeather, currentTime, currentDate);
+            initialPageLoaded = true;
         }
     }
     
+    
+    delay(10);                // Healthy sleep
     currentMillis = millis(); // Refresh for next loop
 }

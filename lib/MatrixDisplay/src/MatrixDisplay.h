@@ -23,11 +23,13 @@ class MatrixDisplay {
                uint16_t panel_res_y,
                int8_t panel_chain);
         void drawBusScheduleFor(RouteGroupData& data, RouteGroupType tripsType, const char* currentTime);
-        void drawWeatherFor(WeatherData& weatherData, const char* currentHHMM, const char* currentDateShort);
+        void drawWeatherFor(WeatherData& weatherData, const char* currentTime, const char* currentDateShort);
+        void drawClock(const char* currentTime);
         void drawChar(uint8_t x, uint8_t y, uint8_t chaar);
         void drawText(uint8_t x, uint8_t y, const char* text);
         void drawText(uint8_t x, uint8_t y, const char* text, uint16_t textColor);
         void drawPixel(uint8_t x, uint8_t y);
+        void drawLoadingBar(uint8_t widthPixels);
         void setBrightness(uint8_t brightness);
         void clearScreen();
 
@@ -35,7 +37,6 @@ class MatrixDisplay {
         void drawIcon(uint16_t *ico, int8_t x, int8_t y, int8_t cols, int8_t rows);
     private:
         MatrixPanel_I2S_DMA *_dma_display = nullptr;
-        uint8_t _panelBrightness = 20;
         uint16_t _colorBlack = _dma_display->color565(0, 0, 0);
         uint16_t _colorWhite = _dma_display->color565(255, 255, 255);
         uint16_t _colorTextPrimary = _dma_display->color565(COLOR_TEXT_PRIMARY_R, COLOR_TEXT_PRIMARY_G, COLOR_TEXT_PRIMARY_B);
@@ -52,7 +53,8 @@ class MatrixDisplay {
         TaskHandle_t extraWeatherDataTaskHandle = NULL;
         static void ExtraWeatherDataTaskFunction(void *pvParameters);
 
-        uint8_t _targetBrightness;
+        uint8_t _panelBrightness = 20;
+        uint8_t _targetBrightness = 20;
         TaskHandle_t brightnessTaskHandle = NULL;
         static void BrightnessTaskFunction(void *pvParameters);
 
