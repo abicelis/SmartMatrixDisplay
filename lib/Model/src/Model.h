@@ -5,7 +5,6 @@
 
 enum AppState { Initializing, NextPageLoading, NextPageLoaded, NextPageErrorLoading, Sleeping };
 enum AppPage { NoPage, VickyCommutePage, NorthSouthPage, EastWestPage, WeatherPage};
-// enum TaskState { NotRunning, Running, Done };
 
 enum RouteType { FrequentRoute, LocalRoute };
 enum RouteGroupType { VickyCommute, NorthSouth, EastWest };

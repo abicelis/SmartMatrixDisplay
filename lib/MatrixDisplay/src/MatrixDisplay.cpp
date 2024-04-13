@@ -4,7 +4,8 @@
 #include <Config.h>
 #include "MatrixDisplay.h"
 #include "images.h"
-#include "icons.h"
+#include "icons1BitPerPixel.h"
+#include "icons2BytePerPixel565.h"
 
 void MatrixDisplay::begin(int8_t r1_pin, int8_t g1_pin, int8_t b1_pin, int8_t r2_pin, int8_t g2_pin, int8_t b2_pin,
                int8_t a_pin, int8_t b_pin, int8_t c_pin, int8_t d_pin, int8_t e_pin, int8_t lat_pin, int8_t oe_pin,
@@ -31,9 +32,10 @@ void MatrixDisplay::drawBusScheduleFor(RouteGroupData& data, RouteGroupType trip
     clearScreen();
 
     //Draw icon
-    _dma_display->fillCircle(SCHEDULE_BUS_X_POSITION+3, SCHEDULE_BUS_Y_POSITION+4, 4, _colorOCTranspoLogo);
-    _dma_display->fillCircle(SCHEDULE_BUS_X_POSITION+3, SCHEDULE_BUS_Y_POSITION+4, 1, _colorBlack);
+    // _dma_display->fillCircle(SCHEDULE_BUS_X_POSITION+3, SCHEDULE_BUS_Y_POSITION+4, 4, _colorOCTranspoLogo);
+    // _dma_display->fillCircle(SCHEDULE_BUS_X_POSITION+3, SCHEDULE_BUS_Y_POSITION+4, 1, _colorBlack);
     // _dma_display->drawBitmap(SCHEDULE_BUS_X_POSITION, SCHEDULE_BUS_Y_POSITION, icon_Bus, 7, 9, _colorTextPrimary);
+    _dma_display->drawRGBBitmap(SCHEDULE_BUS_X_POSITION, SCHEDULE_BUS_Y_POSITION, icon_OCTranspoLogo, 9, 9);
 
     // Draw Title
     if(tripsType==VickyCommute) {
@@ -124,7 +126,7 @@ void MatrixDisplay::drawWeatherFor(WeatherData& weatherData, const char* current
     // Weather Type Image
     uint8_t weatherTypePosX = 4;
     uint8_t weatherTypePosY = 15;
-	DrawImage(weatherTypePosX, weatherTypePosY, 25, 25, weatherTypeToImage(weatherData.currentWeatherType, weatherData.isDaytime));
+	drawASCWWImage(weatherTypePosX, weatherTypePosY, 25, 25, weatherTypeToImage(weatherData.currentWeatherType, weatherData.isDaytime));
 
     // MaxMin temp Pos
     uint8_t maxMinIconPosX = 4;
@@ -277,7 +279,8 @@ void MatrixDisplay::clearScreen() {
     _dma_display->clearScreen();
 }
 
-void MatrixDisplay::DrawImage(int x, int y, int width, int height, const char* imageArray) {
+// ASCWW = ArduinoSmartClockWithWeather
+void MatrixDisplay::drawASCWWImage(int x, int y, int width, int height, const char* imageArray) {
   unsigned int count = 0;
   char first = 0;
   char second = 0;
@@ -310,17 +313,6 @@ void MatrixDisplay::DrawImage(int x, int y, int width, int height, const char* i
       count += 2;
     }
   }
-}
-
-void MatrixDisplay::drawIcon(uint16_t *ico, int8_t x, int8_t y, int8_t cols, int8_t rows) {
-    int i, j;
-    for (i = 0; i < rows; i++)
-    {
-        for (j = 0; j < cols; j++)
-        {
-        _dma_display->drawPixel(x + j, y + i, ico[i * cols + j]);
-        }
-    }
 }
 
 void MatrixDisplay::TrackingBusIndicatorTaskFunction(void *pvParameters) {
