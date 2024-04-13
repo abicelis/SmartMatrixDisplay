@@ -1,6 +1,6 @@
-#include "Hyst.h"
+#include "Hysteresis.h"
 
-void Hyst::begin(uint16_t initialIn, uint16_t topStepIn, uint16_t bottomStepIn, 
+void Hysteresis::begin(uint16_t initialIn, uint16_t topStepIn, uint16_t bottomStepIn, 
                  uint16_t sizeAccumInSamples, uint8_t innerSteps, uint16_t gapSize) {
 
     _topStepIn = topStepIn;
@@ -16,7 +16,7 @@ void Hyst::begin(uint16_t initialIn, uint16_t topStepIn, uint16_t bottomStepIn,
     _currentOut = innerSteps + 1;           // Start currentOut on Top Step
 }
 
-uint16_t Hyst::add(uint16_t sample) {
+uint16_t Hysteresis::add(uint16_t sample) {
     _currentInAccum -= (_currentInAccum / _sizeAccumInSamples);
     _currentInAccum += sample;
 
@@ -48,6 +48,6 @@ uint16_t Hyst::add(uint16_t sample) {
     return _currentOut;
 }
 
-uint16_t Hyst::get() {
+uint16_t Hysteresis::get() {
     return _currentOut;
 }

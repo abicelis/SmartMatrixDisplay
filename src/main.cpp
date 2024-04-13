@@ -6,7 +6,7 @@
 #include <Config.h>
 #include <Model.h>
 
-#include <Hyst.h>
+#include <Hysteresis.h>
 #include <OCTranspoAPI.h>
 #include <MatrixDisplay.h>
 #include <OpenMeteoAPI.h>
@@ -18,7 +18,7 @@ HTTPClient httpClient;
 MatrixDisplay display;
 OCTranspoAPI octranspoAPI(&wifiClient, &httpClient);
 OpenMeteoAPI openMeteoAPI(&wifiClient, &httpClient);
-Hyst hysteresis;
+Hysteresis hysteresis;
 
 bool firstPage = true;
 uint8_t loadingRecheckAttempt = 0;

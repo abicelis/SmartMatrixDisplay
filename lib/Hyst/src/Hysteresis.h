@@ -1,7 +1,7 @@
-#ifndef HYST_H
-#define HYST_H
+#ifndef HYSTERESIS_H
+#define HYSTERESIS_H
 #include <Arduino.h>
-class Hyst {
+class Hysteresis {
     public:
         void begin(uint16_t initialIn, uint16_t topStepIn, uint16_t bottomStepIn, 
                  uint16_t sizeAccumInSamples, uint8_t innerSteps, uint16_t gapSize);
