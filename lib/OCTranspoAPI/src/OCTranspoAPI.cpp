@@ -12,7 +12,7 @@ OCTranspoAPI::OCTranspoAPI(WiFiClientSecure* wifiClient, HTTPClient* httpClient)
     _httpClient = httpClient;
 }
 
-RouteGroupData OCTranspoAPI::fetchTrips(RouteGroupType type) {
+RouteGroupData OCTranspoAPI::fetchRouteGroup(RouteGroupType type) {
     RouteGroupData data;
     data.type = type;
     if(type == VickyCommute) {
@@ -31,6 +31,8 @@ RouteGroupData OCTranspoAPI::fetchTrips(RouteGroupType type) {
 }
 
 void OCTranspoAPI::fetchTripsFor(RouteGroupData& data, const String& stopNo, const String& routeNo) {
+    delay(500); // Delay a bit?
+    
     #ifdef DEBUG
     Serial.println("fetchTripsFor Stop#" + stopNo + " Route#"+ routeNo);
     #endif

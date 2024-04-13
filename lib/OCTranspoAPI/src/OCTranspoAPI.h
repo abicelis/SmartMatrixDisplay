@@ -7,7 +7,7 @@
 class OCTranspoAPI {
     public:
         OCTranspoAPI(WiFiClientSecure* wifiClient, HTTPClient* httpClient);
-        RouteGroupData fetchTrips(RouteGroupType type);
+        RouteGroupData fetchRouteGroup(RouteGroupType type);
     private:
         WiFiClientSecure* _wifiClient;
         HTTPClient* _httpClient;

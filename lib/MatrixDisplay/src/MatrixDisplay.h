@@ -29,6 +29,7 @@ class MatrixDisplay {
         void drawText(uint8_t x, uint8_t y, const char* text);
         void drawText(uint8_t x, uint8_t y, const char* text, uint16_t textColor);
         void drawPixel(uint8_t x, uint8_t y);
+        void drawPageBar(float percentComplete);
         void drawLoadingBar(uint8_t widthPixels);
         void setBrightness(uint8_t brightness);
         void clearScreen();
@@ -44,7 +45,8 @@ class MatrixDisplay {
         uint16_t _colorTextRoute = _dma_display->color565(COLOR_TEXT_ROUTE_R, COLOR_TEXT_ROUTE_G, COLOR_TEXT_ROUTE_B);
         uint16_t _colorRouteFrequent = _dma_display->color565(COLOR_ROUTE_FREQUENT_R, COLOR_ROUTE_FREQUENT_G, COLOR_ROUTE_FREQUENT_B);
         uint16_t _colorRouteLocal = _dma_display->color565(COLOR_ROUTE_LOCAL_R, COLOR_ROUTE_LOCAL_G, COLOR_ROUTE_LOCAL_B);
-        
+        uint16_t _colorOCTranspoLogo = _dma_display->color565(COLOR_OC_TRANSPO_LOGO_R, COLOR_OC_TRANSPO_LOGO_G, COLOR_OC_TRANSPO_LOGO_B);
+
         std::vector<std::pair<uint8_t, uint8_t>> _trackingBusIndicatorPositions;
         TaskHandle_t trackingBusIndicatorTaskHandle = NULL;
         static void TrackingBusIndicatorTaskFunction(void *pvParameters);

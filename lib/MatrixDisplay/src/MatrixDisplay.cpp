@@ -30,8 +30,10 @@ void MatrixDisplay::drawBusScheduleFor(RouteGroupData& data, RouteGroupType trip
     fadeOutScreen();
     clearScreen();
 
-    //Draw lil bus
-    _dma_display->drawBitmap(SCHEDULE_BUS_X_POSITION, SCHEDULE_BUS_Y_POSITION, icon_Bus, 7, 9, _colorTextPrimary);
+    //Draw icon
+    _dma_display->fillCircle(SCHEDULE_BUS_X_POSITION+3, SCHEDULE_BUS_Y_POSITION+4, 4, _colorOCTranspoLogo);
+    _dma_display->fillCircle(SCHEDULE_BUS_X_POSITION+3, SCHEDULE_BUS_Y_POSITION+4, 1, _colorBlack);
+    // _dma_display->drawBitmap(SCHEDULE_BUS_X_POSITION, SCHEDULE_BUS_Y_POSITION, icon_Bus, 7, 9, _colorTextPrimary);
 
     // Draw Title
     if(tripsType==VickyCommute) {
@@ -49,7 +51,7 @@ void MatrixDisplay::drawBusScheduleFor(RouteGroupData& data, RouteGroupType trip
 
     // Draw Horizontal rule
     _dma_display->drawFastHLine(SCHEDULE_HORIZONTAL_MARGIN_PX, SCHEDULE_TOP_HEADER_SIZE_PX-4,
-        PANEL_RES_X - SCHEDULE_HORIZONTAL_MARGIN_PX*2, _colorTextPrimary);
+        PANEL_RES_X - SCHEDULE_HORIZONTAL_MARGIN_PX*2, _colorTextSecondary);
 
     uint8_t signWidth = SCHEDULE_BUS_SIGN_WIDTH_PX;
     uint8_t row = SCHEDULE_TOP_HEADER_SIZE_PX+1;
@@ -117,7 +119,7 @@ void MatrixDisplay::drawWeatherFor(WeatherData& weatherData, const char* current
 
     // Draw Horizontal rule
     _dma_display->drawFastHLine(SCHEDULE_HORIZONTAL_MARGIN_PX, SCHEDULE_TOP_HEADER_SIZE_PX-4,
-        PANEL_RES_X - SCHEDULE_HORIZONTAL_MARGIN_PX*2, _colorTextPrimary);
+        PANEL_RES_X - SCHEDULE_HORIZONTAL_MARGIN_PX*2, _colorTextSecondary);
 
     // Weather Type Image
     uint8_t weatherTypePosX = 4;
@@ -206,6 +208,16 @@ void MatrixDisplay::drawText(uint8_t x, uint8_t y, const char* text, uint16_t te
 
 void MatrixDisplay::drawPixel(uint8_t x, uint8_t y) {
     _dma_display->drawPixel(x, y, _colorTextPrimary);
+}
+
+void MatrixDisplay::drawPageBar(float percentComplete) {
+    uint8_t fullBarWidth = PANEL_RES_X - SCHEDULE_HORIZONTAL_MARGIN_PX*2;
+    uint8_t barWidth = fullBarWidth;
+    if(percentComplete < 1)
+        barWidth = percentComplete*fullBarWidth;
+
+    _dma_display->drawFastHLine(SCHEDULE_HORIZONTAL_MARGIN_PX, SCHEDULE_TOP_HEADER_SIZE_PX-4,
+        barWidth, _colorTextPrimary);
 }
 
 void MatrixDisplay::drawLoadingBar(uint8_t widthPixels) {

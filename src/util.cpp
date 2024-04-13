@@ -47,7 +47,7 @@ void printTrips(const RouteGroupData& data) {
     }
 }
 
-void updateAppState(AppState& appState, uint16_t lightSensorValue) {
+void updateAppState(AppState& appState, AppPage& appPage) {
     // appState = Weather;
 
     // if (appState == RoutesNorthSouth) {
@@ -62,36 +62,40 @@ void updateAppState(AppState& appState, uint16_t lightSensorValue) {
     // bool sleeping = false;
 
     Serial.print("UpdateAppState - Hour of day=" + String(hourOfDay) + ", Sleeping=" 
-        + String(sleeping) + ", VCommute=" + String(vickyCommute) + ", LightSensor=" + String(lightSensorValue) + " ");
+        + String(sleeping) + ", VCommute=" + String(vickyCommute));
 
     if(vickyCommute) {
-        Serial.println("Result: VickyCommute");
-        if(appState == Weather) {
-            appState = RoutesVickyCommute;
-        } else {
-            appState = Weather;
-        }
-    } else if(sleeping || lightSensorValue <= APPSTATE_SLEEPING_LIGHT_SENSOR_VALUE_TRESHOLD) {
+        Serial.println("- Result: VickyCommute");
+        appState = NextPageLoading;
+        
+        if(appPage == NoPage || appPage == WeatherPage)
+            appPage = VickyCommutePage;
+        else
+            appPage = WeatherPage;
+    } else if(sleeping) {
+        Serial.println("- Result: Sleeping");
         appState = Sleeping;
-        Serial.println("Result: Sleeping");
+        appPage = NoPage;
     } else {
-        Serial.println("Result: WeatherOrRoutes");
-        if (appState == Weather) {
-            appState = RoutesNorthSouth;
-        } else if (appState == RoutesNorthSouth) {
-            appState = RoutesEastWest;
-        } else {
-            appState = Weather;
+        Serial.println("- Result: Normal Mode");
+        appState = NextPageLoading;
+        
+        if(appPage == NoPage || appPage == WeatherPage) {
+            appPage = NorthSouthPage;
+        } else if(appPage == NorthSouthPage) {
+            appPage = EastWestPage;
+        } else { //EastWestPage 
+            appPage = WeatherPage;
         }
     }
 }
 
-RouteGroupType appStateToRouteGroupType(AppState appState) {
+RouteGroupType appPageToRouteGroupType(AppPage appPage) {
     RouteGroupType type = VickyCommute;
 
-    if(appState == RoutesNorthSouth)
+    if(appPage == NorthSouthPage)
         type = NorthSouth;
-    else if(appState == RoutesEastWest)
+    else if(appPage == EastWestPage)
         type = EastWest;
 
     return type;
