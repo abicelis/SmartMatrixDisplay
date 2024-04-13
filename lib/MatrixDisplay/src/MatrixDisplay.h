@@ -31,11 +31,9 @@ class MatrixDisplay {
         void drawPixel(uint8_t x, uint8_t y);
         void drawPageBar(float percentComplete);
         void drawLoadingBar(uint8_t widthPixels);
-        void setBrightness(uint8_t brightness);
-        void clearScreen();
-        
+        void setBrightness(uint8_t brightnessStep);
+        void clearScreen();        
         void drawASCWWImage(int x, int y, int width, int height, const char* imageArray); // ASCWW = ArduinoSmartClockWithWeather
-        // void drawIcon(uint16_t *ico, int8_t x, int8_t y, int8_t cols, int8_t rows);
     private:
         MatrixPanel_I2S_DMA *_dma_display = nullptr;
         uint16_t _colorBlack = _dma_display->color565(0, 0, 0);

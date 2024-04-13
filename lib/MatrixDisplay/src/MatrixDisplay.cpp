@@ -230,15 +230,17 @@ void MatrixDisplay::drawLoadingBar(uint8_t widthPixels) {
     LOADING_PAGE_BAR_THICKNESS_PX, LOADING_PAGE_BAR_CORNER_RADIUS_PX, _colorTextPrimary);
 }
 
-void MatrixDisplay::setBrightness(uint8_t brightness) {
-    uint8_t clampedBrightness = brightness;
+void MatrixDisplay::setBrightness(uint8_t brightnessStep) {
+
     // Clamp brightness
-    if(clampedBrightness > DISPLAY_BRIGHTNESS_MAX)
+    uint8_t clampedBrightness;
+    if(brightnessStep >= DISPLAY_HYSTERESIS_BRIGHTNESS_STEPS - 1)
         clampedBrightness = DISPLAY_BRIGHTNESS_MAX;
-    else if (clampedBrightness < DISPLAY_BRIGHTNESS_MIN)
+    else if (brightnessStep == 0)
         clampedBrightness = DISPLAY_BRIGHTNESS_MIN;
-    else
-        clampedBrightness = brightness;
+    else {
+        clampedBrightness = DISPLAY_BRIGHTNESS_MIN + (brightnessStep * DISPLAY_BRIGHTNESS_STEP_SIZE);
+    }
 
 
     if(clampedBrightness != _targetBrightness) {

@@ -100,21 +100,3 @@ RouteGroupType appPageToRouteGroupType(AppPage appPage) {
 
     return type;
 }
-
-/**
- * Returns a value that's in the range DISPLAY_BRIGHTNESS_MIN - DISPLAY_BRIGHTNESS_MAX
- *  - Return DISPLAY_BRIGHTNESS_MIN for any value < LIGHT_SENSOR_VALUE_MIN
- *  - Return DISPLAY_BRIGHTNESS_MAX for any value > LIGHT_SENSOR_VALUE_MAX
- *  - Map a value in between DISPLAY_BRIGHTNESS_MIN and DISPLAY_BRIGHTNESS_MAX for light sensor values in between
- *    In incremental steps based on DISPLAY_BRIGHTNESS_STEPS
-*/
-int8_t lightSensorToDisplayBrightness(uint16_t lightSensorValue) {
-    if(lightSensorValue < LIGHT_SENSOR_VALUE_MIN) {
-        return DISPLAY_BRIGHTNESS_MIN;
-    } else if(lightSensorValue > LIGHT_SENSOR_VALUE_MAX) {
-        return DISPLAY_BRIGHTNESS_MAX;
-    } else {
-        uint8_t mappedValue = map(lightSensorValue, LIGHT_SENSOR_VALUE_MIN, LIGHT_SENSOR_VALUE_MAX, 1, DISPLAY_BRIGHTNESS_STEPS);
-        return DISPLAY_BRIGHTNESS_MIN + ((float)mappedValue/DISPLAY_BRIGHTNESS_STEPS) * (DISPLAY_BRIGHTNESS_MAX - DISPLAY_BRIGHTNESS_MIN);
-    }    
-}

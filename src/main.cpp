@@ -6,6 +6,7 @@
 #include <Config.h>
 #include <Model.h>
 
+#include <Hyst.h>
 #include <OCTranspoAPI.h>
 #include <MatrixDisplay.h>
 #include <OpenMeteoAPI.h>
@@ -17,13 +18,13 @@ HTTPClient httpClient;
 MatrixDisplay display;
 OCTranspoAPI octranspoAPI(&wifiClient, &httpClient);
 OpenMeteoAPI openMeteoAPI(&wifiClient, &httpClient);
+Hyst hysteresis;
 
 bool firstPage = true;
 uint8_t loadingRecheckAttempt = 0;
 AppState appState = Initializing;
 AppPage appPage = NoPage;
 TaskHandle_t taskHandle = NULL;
-uint16_t lightSensorValue = 0;
 uint32_t currentMillis = 0;
 uint32_t nextCheckMillis = 0;
 uint32_t pageChangedMillis = 0;
@@ -83,6 +84,10 @@ void setup() {
     // Display
     display.begin(R1_PIN, G1_PIN, B1_PIN, R2_PIN, G2_PIN, B2_PIN, A_PIN, B_PIN, C_PIN, D_PIN, E_PIN, LAT_PIN, OE_PIN, CLK_PIN, PANEL_RES_X, PANEL_RES_Y, PANEL_CHAIN);
 
+    // Hysteresis
+    hysteresis.begin(4096, LIGHT_SENSOR_VALUE_MAX, LIGHT_SENSOR_VALUE_MIN, 
+                     LIGHT_SENSOR_SAMPLES, DISPLAY_HYSTERESIS_BRIGHTNESS_STEPS-2, DISPLAY_HYSTERESIS_GAP_SIZE);
+
     // WiFi
     display.drawText(28, 23, "Initializing");
     uint8_t loadingPercent = 10;
@@ -131,21 +136,14 @@ void setup() {
 
     currentMillis = millis();
     nextCheckMillis = currentMillis;
-    lightSensorValue = 4000;                     // Start very bright
-    lightSensorValue *= LIGHT_SENSOR_SAMPLES;
 }
 
 void checkAppStateAndContinueFromThere();
 void loop() {
     if(currentMillis - previousLightSensorUpdateMillis >= INTERVAL_UPDATE_LIGHT_SENSOR) {
         uint16_t newSample = analogRead(A0);
-        // Update LDR sensor value
-        // Serial.print("lightSensorValue read " + String(newSample));
-        lightSensorValue -= (lightSensorValue / LIGHT_SENSOR_SAMPLES);
-        lightSensorValue += newSample;
-        // Serial.println(" lightSensorValue now is " + String(lightSensorValue) + " result=" + String(lightSensorValue/LIGHT_SENSOR_SAMPLES));
-
-        display.setBrightness(lightSensorToDisplayBrightness(lightSensorValue/LIGHT_SENSOR_SAMPLES));
+        uint16_t outValue = hysteresis.add(newSample);
+        display.setBrightness(outValue);
         previousLightSensorUpdateMillis = currentMillis;
     }
 
