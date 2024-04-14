@@ -33,30 +33,13 @@ WeatherData OpenMeteoAPI::fetchCurrentWeather(const uint8_t clockHour) {
         time_t sunriseTimestamp = iso8601DateStringToUnixTimestamp(doc["daily"]["sunrise"][0]);
         time_t sunsetTimestamp = iso8601DateStringToUnixTimestamp(doc["daily"]["sunset"][0]);
 
-
-        Serial.print("SUNRISE IS ");
-        Serial.println(sunriseTimestamp);
-
-        Serial.print("SUNSET IS ");
-        Serial.println(sunsetTimestamp);
-        
-
         result.setCorrectly = true;
         for(uint8_t currentHour = clockHour; currentHour <= clockHour+(OPEN_METEO_API_HOUR_STEP*3); currentHour += OPEN_METEO_API_HOUR_STEP) {
-            Serial.print("Current hour ");
-            Serial.println(currentHour);
-
             String timeStr = (currentHour > 12 ? String(currentHour - 12) + String(" pm") : String(currentHour) + String(" am")); 
             result.times.push_back(timeStr);
 
             time_t currentTimestamp = iso8601DateStringToUnixTimestamp(doc["hourly"]["time"][currentHour]);
             result.isDaytime.push_back(currentTimestamp >= sunriseTimestamp && currentTimestamp <= sunsetTimestamp);
-
-            Serial.print("CURRENT TIMESTAMP IS ");
-            Serial.println(currentTimestamp);
-            Serial.print("RESULT IS ");
-            Serial.println(currentTimestamp >= sunriseTimestamp && currentTimestamp <= sunsetTimestamp);
-        
 
             result.weatherType.push_back(WMOCodeToWeatherType(doc["hourly"]["weather_code"][currentHour].as<int>()));
             result.temperatureCelcius.push_back(String(doc["hourly"]["temperature_2m"][currentHour].as<int>()) + String("°"));
