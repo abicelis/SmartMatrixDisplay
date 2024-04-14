@@ -2,7 +2,7 @@
 #define UTIL_H
 #include <Model.h>
 #include <RouteGroupData.h>
-int currentHourOfDay();
+uint8_t currentHourOfDay();
 void currentDateFull(char* buffer, size_t bufferSize);
 void currentDateShort(char* buffer, size_t bufferSize);
 void currentHourMinute(char* buffer, size_t bufferSize);

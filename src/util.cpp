@@ -5,11 +5,11 @@
 #include <Config.h>
 #include "util.h"
 
-int currentHourOfDay() {
+uint8_t currentHourOfDay() {
     time_t now;
     time(&now);
     struct tm *timeinfo = localtime(&now);
-    int hour = timeinfo->tm_hour;
+    uint8_t hour = timeinfo->tm_hour;
     return hour;
 }
 void currentDateFull(char* buffer, size_t bufferSize) {
@@ -48,13 +48,10 @@ void printTrips(const RouteGroupData& data) {
 }
 
 void updateAppState(AppState& appState, AppPage& appPage) {
-    // appState = Weather;
+    appState = NextPageLoading;
+    appPage = WeatherPage;
+    return;
 
-    // if (appState == RoutesNorthSouth) {
-    //     appState = RoutesEastWest;
-    // } else {
-    //     appState = RoutesNorthSouth;
-    // }
 
     int hourOfDay = currentHourOfDay();
     bool vickyCommute = hourOfDay >= APPSTATE_VICKY_COMMUTE_HOUR_START && hourOfDay <= APPSTATE_VICKY_COMMUTE_HOUR_END;

@@ -6,12 +6,13 @@
 class OpenMeteoAPI {
     public:
         OpenMeteoAPI(WiFiClientSecure* wifiClient, HTTPClient* httpClient);
-        WeatherData fetchCurrentWeather();
+        WeatherData fetchCurrentWeather(const uint8_t clockHour);
     private:
         WiFiClientSecure* _wifiClient;
         HTTPClient* _httpClient;
         WeatherType WMOCodeToWeatherType(uint8_t wmoCode);
         String UVIndexCodeToString(uint8_t index);
-        String TimeStringFromUnixTimestamp(time_t timestamp);
+        time_t iso8601DateStringToUnixTimestamp(const char* dateTime);
+        
 };
 #endif

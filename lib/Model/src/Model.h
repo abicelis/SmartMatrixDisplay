@@ -33,13 +33,17 @@ enum UVIndex { Low, Moderate, High, VeryHigh, Extreme };
 enum ExtraWeatherDataType { CurrentRelativeHumidity, CurrentWindSpeed, DailyPrecipitation, Sunrise, Sunset, MaxUVIndex };
 struct WeatherData {
     bool setCorrectly;
-    WeatherType currentWeatherType;
-    String currentTemperatureCelcius;
-    String currentApparentTemperatureCelcius;                    // "Feels like" temp.
-    String dailyTemperatureMinCelcius;
-    String dailyTemperatureMaxCelcius;
-    bool isDaytime;
-    std::vector<std::pair<ExtraWeatherDataType, String>> extraWeatherData;
+    std::vector<String> times;
+    std::vector<bool> isDaytime;
+    std::vector<WeatherType> weatherType;
+    std::vector<String> temperatureCelcius;
+    std::vector<String> apparentTemperatureCelcius;                    // "Feels like" temp.
+    std::vector<String> relativeHumidity;
+    std::vector<String> precipitationProbability;
+    std::vector<String> precipitation;
+    
+
+    // std::vector<std::pair<ExtraWeatherDataType, String>> extraWeatherData;
 };
 
 #endif

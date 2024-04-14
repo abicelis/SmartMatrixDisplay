@@ -22,18 +22,17 @@ class MatrixDisplay {
                uint16_t panel_res_x,
                uint16_t panel_res_y,
                int8_t panel_chain);
-        void drawBusScheduleFor(RouteGroupData& data, RouteGroupType tripsType, const char* currentTime);
-        void drawWeatherFor(WeatherData& weatherData, const char* currentTime, const char* currentDateShort);
+
+        void drawInitializationPage(uint8_t loadingBarWidthPixels);
+        void drawBusSchedulePage(RouteGroupData& data, RouteGroupType tripsType, const char* currentTime);
+        void drawWeatherPage(WeatherData& weatherData, const char* currentTime, const char* currentDateShort);
+        void drawSleepPage();
+
         void drawClock(const char* currentTime);
-        void drawChar(uint8_t x, uint8_t y, uint8_t chaar);
-        void drawText(uint8_t x, uint8_t y, const char* text);
-        void drawText(uint8_t x, uint8_t y, const char* text, uint16_t textColor);
-        void drawPixel(uint8_t x, uint8_t y);
         void drawPageBar(float percentComplete);
-        void drawLoadingBar(uint8_t widthPixels);
+
         void setBrightness(uint8_t brightnessStep);
         void clearScreen();        
-        void drawASCWWImage(int x, int y, int width, int height, const char* imageArray); // ASCWW = ArduinoSmartClockWithWeather
     private:
         MatrixPanel_I2S_DMA *_dma_display = nullptr;
         uint16_t _colorBlack = _dma_display->color565(0, 0, 0);
@@ -57,11 +56,19 @@ class MatrixDisplay {
         uint8_t _targetBrightness = 20;
         TaskHandle_t brightnessTaskHandle = NULL;
         static void BrightnessTaskFunction(void *pvParameters);
-
+        
+        void drawPixel(uint8_t x, uint8_t y);
+        void drawChar(uint8_t x, uint8_t y, uint8_t chaar);
+        void drawText(uint8_t x, uint8_t y, const char* text);
+        void drawText(uint8_t x, uint8_t y, const char* text, const GFXfont *f);
+        uint8_t drawCenteredText(uint8_t x, uint8_t y, const char* text, const GFXfont *f);
         void drawRouteSign(RouteType type, uint8_t x, uint8_t y, uint8_t width, const char* text);
         void drawMinuteSymbol(uint8_t x, uint8_t y);
+        void drawASCWWImage(int x, int y, int width, int height, const char* imageArray); // ASCWW = ArduinoSmartClockWithWeather
+
         String shortenRouteDestination(const String& label);
         uint8_t getTextWidth(const char *str);
+        uint8_t getTextWidth(const char *str, const GFXfont *f);
         uint8_t getRightAlignStartingPoint(const char* str, int8_t xPosition);
         void fadeOutScreen();
         void fadeInScreen();

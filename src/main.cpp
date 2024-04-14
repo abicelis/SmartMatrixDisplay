@@ -57,7 +57,7 @@ void FetchRoutes(void *pvParameters) {
 
 void FetchWeather(void *pvParameters) {
     Serial.println("FetchWeather task started..");
-    weatherData = openMeteoAPI.fetchCurrentWeather();
+    weatherData = openMeteoAPI.fetchCurrentWeather(currentHourOfDay());
     appState = NextPageLoaded;
 
     if(!weatherData.setCorrectly) {
@@ -89,9 +89,8 @@ void setup() {
                      LIGHT_SENSOR_SAMPLES, DISPLAY_HYSTERESIS_BRIGHTNESS_STEPS-2, DISPLAY_HYSTERESIS_GAP_SIZE);
 
     // WiFi
-    display.drawText(28, 23, "Initializing");
     uint8_t loadingPercent = 10;
-    display.drawLoadingBar(loadingPercent);
+    display.drawInitializationPage(loadingPercent);
     WiFi.mode(WIFI_STA);
     WiFi.begin(SSID_NAME, SSID_PASSWORD);
     Serial.print("Connecting to WiFi..");
@@ -100,7 +99,7 @@ void setup() {
         Serial.print(".");
         delay(200);
         if(loadingPercent <= 20)
-            display.drawLoadingBar(++loadingPercent);
+            display.drawInitializationPage(++loadingPercent);
     }
     Serial.println("DONE.");
     Serial.print("  > Local IP: ");
@@ -113,7 +112,7 @@ void setup() {
 
     // Configure NTP
     loadingPercent = 30;
-    display.drawLoadingBar(loadingPercent);
+    display.drawInitializationPage(loadingPercent);
     Serial.print("Grabbing time from NTP..");
     configTime(NTP_GMT_OFFSET_SEC, NTP_DAYLIGHT_OFFSET_SEC, NTP_SERVER);
     time_t now;
@@ -121,7 +120,7 @@ void setup() {
         Serial.print(".");
         delay(200);
         if(loadingPercent <= 50)
-            display.drawLoadingBar(++loadingPercent);
+            display.drawInitializationPage(++loadingPercent);
     }
     Serial.println("DONE.");
     char timeStringBuff[20];
@@ -132,7 +131,7 @@ void setup() {
     Serial.println("\n\nSTARTING:");
     
     loadingPercent = 70;
-    display.drawLoadingBar(loadingPercent);
+    display.drawInitializationPage(loadingPercent);
 
     currentMillis = millis();
     nextCheckMillis = currentMillis;
@@ -180,9 +179,9 @@ void loop() {
             char currentDate[20];
             currentDateShort(currentDate, sizeof(currentDate));
             if(appPage == WeatherPage)
-                display.drawWeatherFor(weatherData, currentTime, currentDate);
+                display.drawWeatherPage(weatherData, currentTime, currentDate);
             else
-                display.drawBusScheduleFor(routeGroupData, appPageToRouteGroupType(appPage), currentTime);
+                display.drawBusSchedulePage(routeGroupData, appPageToRouteGroupType(appPage), currentTime);
 
             firstPage = false;
             loadingRecheckAttempt = 0;
@@ -246,8 +245,7 @@ void checkAppStateAndContinueFromThere() {
     } else if(appState == Sleeping) {
         Serial.println("Sleeping now");
         // TODO - Something more interesting here? Maybe a cool animation?
-        display.clearScreen();
-        display.drawText(48, 30, "Zzzz..");
+        display.drawSleepPage();
 
         // TODO Stay in this state for WAY longer, 
         // TODO But make sure to set nextCheckMillis so that we immediately wake up when we need to
