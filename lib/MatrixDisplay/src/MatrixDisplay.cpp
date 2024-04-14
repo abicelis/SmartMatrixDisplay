@@ -7,6 +7,7 @@
 #include "images/icons1BitPerPixel.h"
 #include "images/icons2BytePerPixel565.h"
 #include "fonts/Font5x5Fixed.h"
+#include "fonts/Font5x7Fixed.h"
 
 void MatrixDisplay::begin(int8_t r1_pin, int8_t g1_pin, int8_t b1_pin, int8_t r2_pin, int8_t g2_pin, int8_t b2_pin,
                int8_t a_pin, int8_t b_pin, int8_t c_pin, int8_t d_pin, int8_t e_pin, int8_t lat_pin, int8_t oe_pin,
@@ -44,8 +45,6 @@ void MatrixDisplay::drawBusSchedulePage(RouteGroupData& data, RouteGroupType tri
     clearScreen();
 
     //Draw icon
-    // _dma_display->fillCircle(SCHEDULE_BUS_X_POSITION+3, SCHEDULE_BUS_Y_POSITION+4, 4, _colorOCTranspoLogo);
-    // _dma_display->fillCircle(SCHEDULE_BUS_X_POSITION+3, SCHEDULE_BUS_Y_POSITION+4, 1, _colorBlack);
     // _dma_display->drawBitmap(SCHEDULE_BUS_X_POSITION, SCHEDULE_BUS_Y_POSITION, icon_Bus, 7, 9, _colorTextPrimary);
     _dma_display->drawRGBBitmap(SCHEDULE_BUS_X_POSITION, SCHEDULE_BUS_Y_POSITION, icon_OCTranspoLogo, 9, 9);
 
@@ -120,13 +119,8 @@ void MatrixDisplay::drawWeatherPage(WeatherData& weatherData, const char* curren
     fadeOutScreen();
     clearScreen();
 
-    // Draw lil sun
-    _dma_display->drawBitmap(SCHEDULE_BUS_X_POSITION, SCHEDULE_BUS_Y_POSITION, icon_Sun, 7, 9, _colorTextPrimary);
-
     // Draw Title
-    // String weatherTypeStr = weatherTypeToString(weatherData.currentWeatherType);
-    // drawText(SCHEDULE_TITLE_X_POSITION, SCHEDULE_TITLE_Y_POSITION, weatherTypeStr.c_str(), _colorTextPrimary);
-    drawText(SCHEDULE_TITLE_X_POSITION, SCHEDULE_TITLE_Y_POSITION, currentDateShort);
+    drawText(WEATHER_PAGE_TITLE_X_POSITION, WEATHER_PAGE_TITLE_Y_POSITION, currentDateShort, _colorTextPrimary, &Font5x7Fixed);
 
     // Draw clock
     drawText(SCHEDULE_BUS_CLOCK_X_POSITION, SCHEDULE_BUS_CLOCK_Y_POSITION, currentTime);
@@ -142,16 +136,17 @@ void MatrixDisplay::drawWeatherPage(WeatherData& weatherData, const char* curren
 
     uint8_t xPos = 16;
     for (size_t i = 0; i < weatherData.times.size(); ++i) {
-        
-        drawCenteredText(xPos, 20, weatherData.times.at(i).c_str(), &Font5x5Fixed);
-        drawASCWWImage(xPos-12, 21, 25, 25, weatherTypeToImage(weatherData.weatherType.at(i), weatherData.isDaytime.at(i)));
-        drawCenteredText(xPos, 51, weatherData.relativeHumidity.at(i).c_str(), &Font5x5Fixed);
-        drawCenteredText(xPos, 60, weatherData.temperatureCelcius.at(i).c_str(), &Font5x5Fixed);
+        drawCenteredText(xPos, WEATHER_PAGE_TIME_POS_Y, weatherData.times.at(i).c_str(), _colorTextPrimary, &Font5x5Fixed);
+        drawASCWWImage(xPos-12, WEATHER_PAGE_WEATHER_ICON_POS_Y, 25, 25, weatherTypeToImage(weatherData.weatherType.at(i), weatherData.isDaytime.at(i)));
         xPos=xPos+32;
     }
-
     fadeInScreen();
-    return;
+
+    _extraWeatherData = weatherData;
+    xTaskCreatePinnedToCore(ExtraWeatherDataTaskFunction, "ExtraWeatherDataTaskFunction",
+        STACK_DEPTH_EXTRA_WEATHER_DATA_TASK, this, 1, &extraWeatherDataTaskHandle, 1);
+    Serial.println("ExtraWeatherDataTask LAUNCHED");
+    
 }
 
 void MatrixDisplay::drawSleepPage() {
@@ -284,12 +279,11 @@ void MatrixDisplay::TrackingBusIndicatorTaskFunction(void *pvParameters) {
 
 void MatrixDisplay::ExtraWeatherDataTaskFunction(void *pvParameters) {
     MatrixDisplay* instance = static_cast<MatrixDisplay*>(pvParameters);
-    std::vector<std::pair<ExtraWeatherDataType, String>>& extraWeatherData = instance->_extraWeatherData;
+    WeatherData& weatherData = instance->_extraWeatherData;
     MatrixPanel_I2S_DMA* dma_display = instance->_dma_display;
     Serial.println("WeatherInfoTaskFunction INIT");
 
     uint8_t page = 0;
-    uint8_t dataPerPage = 3;
     for(;;) {
 
         int brightness = 0;
@@ -301,27 +295,21 @@ void MatrixDisplay::ExtraWeatherDataTaskFunction(void *pvParameters) {
             uint16_t color = colorWithIntensity(dma_display, COLOR_TEXT_PRIMARY_R, 
                                 COLOR_TEXT_PRIMARY_G, COLOR_TEXT_PRIMARY_B, (float)brightness/brightnessSteps);
 
-            for(int i = page*dataPerPage; i<(dataPerPage*(page+1)); i++) {
-                const unsigned char* icon;
-                ExtraWeatherDataType type = extraWeatherData.at(i).first;
-                if(type == CurrentRelativeHumidity)
-                    icon = icon_Humidity;
-                else if (type == CurrentWindSpeed)
-                    icon = icon_WindSpeed;
-                else if (type == DailyPrecipitation)
-                    icon = icon_Precipitation;
-                else if (type == Sunrise)
-                    icon = icon_Sunrise;
-                else if (type == Sunset)
-                    icon = icon_Sunset;
-                else if (type == MaxUVIndex)
-                    icon = icon_UV;
-                    
-                dma_display->drawBitmap(posX, posY, icon, 16, 16, color);
-                dma_display->setCursor(posX+20, posY+4);
-                dma_display->setTextColor(color);
-                dma_display->print(extraWeatherData.at(i).second);
-                posY+=17;
+            uint8_t xPos = 16;
+            if(page == 0) {
+                for (size_t i = 0; i < weatherData.times.size(); ++i) {
+                    // instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_Y, weatherData.temperatureCelcius.at(i).c_str(), color, &Font5x7Fixed);
+                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_Y, "-19°", color, &Font5x7Fixed);
+                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_Y, "-24°", color, &Font5x5Fixed);
+                    // instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_Y, weatherData.apparentTemperatureCelcius.at(i).c_str(), color, &Font5x5Fixed);
+                    xPos=xPos+32;
+                }
+            } else { // page == 1
+                for (size_t i = 0; i < weatherData.times.size(); ++i) {
+                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_Y, weatherData.precipitationProbability.at(i).c_str(), color, &Font5x5Fixed);
+                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_Y, weatherData.precipitation.at(i).c_str(), color, &Font5x5Fixed);
+                    xPos=xPos+32;
+                }
             }
 
             if(fadingIn)
@@ -385,20 +373,24 @@ void MatrixDisplay::drawChar(uint8_t x, uint8_t y, uint8_t chaar) {
 }
 
 void MatrixDisplay::drawText(uint8_t x, uint8_t y, const char* text) {
-    _dma_display->setTextColor(_colorTextPrimary);
-    _dma_display->setCursor(x, y);
-    _dma_display->print(text);
+    drawText(x, y, text, _colorTextPrimary, NULL);
 }
 
-void MatrixDisplay::drawText(uint8_t x, uint8_t y, const char* text, const GFXfont *f) {
+void MatrixDisplay::drawText(uint8_t x, uint8_t y, const char* text, uint16_t color, const GFXfont *f) {
     _dma_display->setFont(f);
-    drawText(x, y, text);
+    _dma_display->setTextColor(color);
+    _dma_display->setCursor(x, y);
+    _dma_display->print(text);
     _dma_display->setFont();
 }
 
-uint8_t MatrixDisplay::drawCenteredText(uint8_t x, uint8_t y, const char* text, const GFXfont *f) {
+uint8_t MatrixDisplay::drawCenteredText(uint8_t x, uint8_t y, const char* text) {
+    return drawCenteredText(x, y, text, _colorTextPrimary, NULL);       // Returns the cursor in x
+}
+
+uint8_t MatrixDisplay::drawCenteredText(uint8_t x, uint8_t y, const char* text, uint16_t color, const GFXfont *f) {
     uint8_t width = getTextWidth(text, f);
-    drawText(x - width/2, y, text, f);
+    drawText(x - width/2, y, text, color, f);
     return x + width;       // Returns the cursor in x
 }
 

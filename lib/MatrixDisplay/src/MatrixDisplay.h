@@ -48,7 +48,7 @@ class MatrixDisplay {
         TaskHandle_t trackingBusIndicatorTaskHandle = NULL;
         static void TrackingBusIndicatorTaskFunction(void *pvParameters);
 
-        std::vector<std::pair<ExtraWeatherDataType, String>> _extraWeatherData;
+        WeatherData _extraWeatherData;
         TaskHandle_t extraWeatherDataTaskHandle = NULL;
         static void ExtraWeatherDataTaskFunction(void *pvParameters);
 
@@ -60,8 +60,9 @@ class MatrixDisplay {
         void drawPixel(uint8_t x, uint8_t y);
         void drawChar(uint8_t x, uint8_t y, uint8_t chaar);
         void drawText(uint8_t x, uint8_t y, const char* text);
-        void drawText(uint8_t x, uint8_t y, const char* text, const GFXfont *f);
-        uint8_t drawCenteredText(uint8_t x, uint8_t y, const char* text, const GFXfont *f);
+        void drawText(uint8_t x, uint8_t y, const char* text, uint16_t color, const GFXfont *f);
+        uint8_t drawCenteredText(uint8_t x, uint8_t y, const char* text);
+        uint8_t drawCenteredText(uint8_t x, uint8_t y, const char* text, uint16_t color, const GFXfont *f);
         void drawRouteSign(RouteType type, uint8_t x, uint8_t y, uint8_t width, const char* text);
         void drawMinuteSymbol(uint8_t x, uint8_t y);
         void drawASCWWImage(int x, int y, int width, int height, const char* imageArray); // ASCWW = ArduinoSmartClockWithWeather

@@ -63,7 +63,7 @@ WeatherData OpenMeteoAPI::fetchCurrentWeather(const uint8_t clockHour) {
             result.apparentTemperatureCelcius.push_back(String(doc["hourly"]["apparent_temperature"][currentHour].as<int>()) + String("°"));
             result.relativeHumidity.push_back(String(doc["hourly"]["relative_humidity_2m"][currentHour].as<int>()) + String("%"));
             result.precipitationProbability.push_back(String(doc["hourly"]["precipitation_probability"][currentHour].as<int>()) + String("%"));
-            result.precipitation.push_back(String(doc["hourly"]["precipitation"][currentHour].as<int>()) + String("mm"));
+            result.precipitation.push_back(String(doc["hourly"]["precipitation"][currentHour].as<float>(), 1) + String("mm"));
         }
     }
     _httpClient->end();

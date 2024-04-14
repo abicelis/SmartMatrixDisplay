@@ -30,7 +30,6 @@ inline String weatherTypeToString(WeatherType weatherType) {
 }
 
 enum UVIndex { Low, Moderate, High, VeryHigh, Extreme };
-enum ExtraWeatherDataType { CurrentRelativeHumidity, CurrentWindSpeed, DailyPrecipitation, Sunrise, Sunset, MaxUVIndex };
 struct WeatherData {
     bool setCorrectly;
     std::vector<String> times;
@@ -41,9 +40,6 @@ struct WeatherData {
     std::vector<String> relativeHumidity;
     std::vector<String> precipitationProbability;
     std::vector<String> precipitation;
-    
-
-    // std::vector<std::pair<ExtraWeatherDataType, String>> extraWeatherData;
 };
 
 #endif
