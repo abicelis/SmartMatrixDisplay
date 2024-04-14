@@ -36,7 +36,7 @@ void OCTranspoAPI::fetchTripsFor(RouteGroupData& data, const String& stopNo, con
     #ifdef DEBUG
     Serial.println("fetchTripsFor Stop#" + stopNo + " Route#"+ routeNo);
     #endif
-    String endpoint = String(OC_TRANSPO_API_NEXT_TRIPS_FOR_STOP_ENDPOINT);
+    String endpoint = String(OCTRANSPO_API_NEXT_TRIPS_FOR_STOP_ENDPOINT);
     endpoint += "&stopNo=" + stopNo + "&routeNo=" + routeNo;
 
     _httpClient->begin(*_wifiClient, endpoint);
@@ -60,8 +60,8 @@ void OCTranspoAPI::fetchTripsFor(RouteGroupData& data, const String& stopNo, con
             // String out = "";
             // serializeJsonPretty(trip, out);
             // Serial.println(out);
-            int arrivalTime = trip["AdjustedScheduleTime"].as<int>();
-            if(arrivalTime > MAX_ARRIVAL_TIME_MINUTES)
+            int arrivalTime = trip["AdjustedScheduleTime"].as<int>() - OCTRANSPO_API_MINUTES_TO_SUBTRACT_FROM_ARRIVAL_TIME;
+            if(arrivalTime > OCTRANSPO_API_MAX_ARRIVAL_TIME_MINUTES)
                 break;
             String routeDestination = trip["TripDestination"];
             float adjustmentAge = trip["AdjustmentAge"].as<float>();
