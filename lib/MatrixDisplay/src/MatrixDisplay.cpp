@@ -31,13 +31,13 @@ void MatrixDisplay::begin(int8_t r1_pin, int8_t g1_pin, int8_t b1_pin, int8_t r2
 
 void MatrixDisplay::drawInitializationPage(uint8_t loadingBarWidthPixels) {
     clearScreen();
-    drawText(28, 23, "Initializing");
+    drawCenteredText(INITIALIZATION_PAGE_TITLE_POSITION_X, INITIALIZATION_PAGE_TITLE_POSITION_Y, "Initializing");
 
-    _dma_display->drawRoundRect(14, LOADING_PAGE_BAR_Y_POSITION_PX, 100, 
-    LOADING_PAGE_BAR_THICKNESS_PX, LOADING_PAGE_BAR_CORNER_RADIUS_PX, _colorTextPrimary);
+    _dma_display->drawRoundRect(14, INITIALIZATION_PAGE_BAR_Y_POSITION_PX, 100, 
+    INITIALIZATION_PAGE_BAR_THICKNESS_PX, INITIALIZATION_PAGE_BAR_CORNER_RADIUS_PX, _colorTextPrimary);
 
-    _dma_display->fillRoundRect(14, LOADING_PAGE_BAR_Y_POSITION_PX, loadingBarWidthPixels, 
-    LOADING_PAGE_BAR_THICKNESS_PX, LOADING_PAGE_BAR_CORNER_RADIUS_PX, _colorTextPrimary);
+    _dma_display->fillRoundRect(14, INITIALIZATION_PAGE_BAR_Y_POSITION_PX, loadingBarWidthPixels, 
+    INITIALIZATION_PAGE_BAR_THICKNESS_PX, INITIALIZATION_PAGE_BAR_CORNER_RADIUS_PX, _colorTextPrimary);
 }
 
 void MatrixDisplay::drawBusSchedulePage(RouteGroupData& data, RouteGroupType tripsType, const char* currentTime) {
@@ -60,7 +60,7 @@ void MatrixDisplay::drawBusSchedulePage(RouteGroupData& data, RouteGroupType tri
     }
 
     // Draw clock
-    drawText(SCHEDULE_BUS_CLOCK_X_POSITION, SCHEDULE_BUS_CLOCK_Y_POSITION, currentTime);
+    drawTextEnd(SCHEDULE_BUS_CLOCK_X_POSITION, SCHEDULE_BUS_CLOCK_Y_POSITION, currentTime, _colorTextPrimary, &Font5x7Fixed);
 
     // Draw Horizontal rule
     _dma_display->drawFastHLine(SCHEDULE_HORIZONTAL_MARGIN_PX, SCHEDULE_TOP_HEADER_SIZE_PX-4,
@@ -120,10 +120,10 @@ void MatrixDisplay::drawWeatherPage(WeatherData& weatherData, const char* curren
     clearScreen();
 
     // Draw Title
-    drawText(WEATHER_PAGE_TITLE_X_POSITION, WEATHER_PAGE_TITLE_Y_POSITION, currentDateShort, _colorTextPrimary, &Font5x7Fixed);
+    drawText(WEATHER_PAGE_TITLE_X_POSITION, WEATHER_PAGE_TITLE_Y_POSITION, currentDateShort);
 
     // Draw clock
-    drawText(SCHEDULE_BUS_CLOCK_X_POSITION, SCHEDULE_BUS_CLOCK_Y_POSITION, currentTime);
+    drawTextEnd(SCHEDULE_BUS_CLOCK_X_POSITION, SCHEDULE_BUS_CLOCK_Y_POSITION, currentTime, _colorTextPrimary, &Font5x7Fixed);
 
     // Draw Horizontal rule
     _dma_display->drawFastHLine(SCHEDULE_HORIZONTAL_MARGIN_PX, SCHEDULE_TOP_HEADER_SIZE_PX-4,
@@ -155,10 +155,11 @@ void MatrixDisplay::drawSleepPage() {
 }
 
 
-void MatrixDisplay::drawClock(const char* currentTime) {
-    _dma_display->setTextColor(_colorTextPrimary, _colorBlack);
-    _dma_display->setCursor(SCHEDULE_BUS_CLOCK_X_POSITION, SCHEDULE_BUS_CLOCK_Y_POSITION);
-    _dma_display->print(currentTime);
+void MatrixDisplay::drawClock(const char* currentTime) {   
+    uint8_t maxClockWidth = 28; 
+    _dma_display->fillRect(SCHEDULE_BUS_CLOCK_X_POSITION - maxClockWidth, SCHEDULE_BUS_CLOCK_Y_POSITION-7, 
+                           maxClockWidth, 7, _colorBlack);
+    drawTextEnd(SCHEDULE_BUS_CLOCK_X_POSITION, SCHEDULE_BUS_CLOCK_Y_POSITION, currentTime, _colorTextPrimary, &Font5x7Fixed);
 }
 
 void MatrixDisplay::drawPageBar(float percentComplete) {
@@ -298,15 +299,13 @@ void MatrixDisplay::ExtraWeatherDataTaskFunction(void *pvParameters) {
             uint8_t xPos = 16;
             if(page == 0) {
                 for (size_t i = 0; i < weatherData.times.size(); ++i) {
-                    // instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_Y, weatherData.temperatureCelcius.at(i).c_str(), color, &Font5x7Fixed);
-                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_Y, "-19°", color, &Font5x7Fixed);
-                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_Y, "-24°", color, &Font5x5Fixed);
-                    // instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_Y, weatherData.apparentTemperatureCelcius.at(i).c_str(), color, &Font5x5Fixed);
+                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_TOP_Y, weatherData.temperatureCelcius.at(i).c_str(), color, &Font5x7Fixed);
+                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_Y, weatherData.apparentTemperatureCelcius.at(i).c_str(), color, &Font5x5Fixed);
                     xPos=xPos+32;
                 }
             } else { // page == 1
                 for (size_t i = 0; i < weatherData.times.size(); ++i) {
-                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_Y, weatherData.precipitationProbability.at(i).c_str(), color, &Font5x5Fixed);
+                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_TOP_Y, weatherData.precipitationProbability.at(i).c_str(), color, &Font5x5Fixed);
                     instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_Y, weatherData.precipitation.at(i).c_str(), color, &Font5x5Fixed);
                     xPos=xPos+32;
                 }
@@ -377,11 +376,14 @@ void MatrixDisplay::drawText(uint8_t x, uint8_t y, const char* text) {
 }
 
 void MatrixDisplay::drawText(uint8_t x, uint8_t y, const char* text, uint16_t color, const GFXfont *f) {
-    _dma_display->setFont(f);
+    if(f != NULL)
+        _dma_display->setFont(f);
+    else
+        _dma_display->setFont(&Font5x7Fixed);
+
     _dma_display->setTextColor(color);
     _dma_display->setCursor(x, y);
     _dma_display->print(text);
-    _dma_display->setFont();
 }
 
 uint8_t MatrixDisplay::drawCenteredText(uint8_t x, uint8_t y, const char* text) {
@@ -391,6 +393,16 @@ uint8_t MatrixDisplay::drawCenteredText(uint8_t x, uint8_t y, const char* text) 
 uint8_t MatrixDisplay::drawCenteredText(uint8_t x, uint8_t y, const char* text, uint16_t color, const GFXfont *f) {
     uint8_t width = getTextWidth(text, f);
     drawText(x - width/2, y, text, color, f);
+    return x + width;       // Returns the cursor in x
+}
+
+uint8_t MatrixDisplay::drawTextEnd(uint8_t x, uint8_t y, const char* text) {
+    return drawTextEnd(x, y, text, _colorTextPrimary, NULL);       // Returns the cursor in x
+}
+
+uint8_t MatrixDisplay::drawTextEnd(uint8_t x, uint8_t y, const char* text, uint16_t color, const GFXfont *f) {
+    uint8_t width = getTextWidth(text, f);
+    drawText(x - width, y, text, color, f);
     return x + width;       // Returns the cursor in x
 }
 
@@ -470,6 +482,7 @@ String MatrixDisplay::shortenRouteDestination(const String& label) {
 uint8_t MatrixDisplay::getTextWidth(const char *str) {
     int16_t  x1, y1;
     uint16_t w, h;
+    _dma_display->setFont(&Font5x7Fixed);
     _dma_display->getTextBounds(str, 0, 0, &x1, &y1, &w, &h);
     return w;
 }
@@ -477,9 +490,11 @@ uint8_t MatrixDisplay::getTextWidth(const char *str) {
 uint8_t MatrixDisplay::getTextWidth(const char *str, const GFXfont *f) {
     int16_t  x1, y1;
     uint16_t w, h;
-    _dma_display->setFont(f);
+    if(f != NULL)
+        _dma_display->setFont(f);
+    else
+        _dma_display->setFont(&Font5x7Fixed);
     _dma_display->getTextBounds(str, 0, 0, &x1, &y1, &w, &h);
-    _dma_display->setFont();
     return w;
 }
 

@@ -48,9 +48,9 @@ void printTrips(const RouteGroupData& data) {
 }
 
 void updateAppState(AppState& appState, AppPage& appPage) {
-    appState = NextPageLoading;
-    appPage = WeatherPage;
-    return;
+    // appState = NextPageLoading;
+    // appPage = WeatherPage;
+    // return;
 
 
     int hourOfDay = currentHourOfDay();
