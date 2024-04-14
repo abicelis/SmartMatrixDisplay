@@ -67,7 +67,7 @@ void MatrixDisplay::drawBusSchedulePage(RouteGroupData& data, RouteGroupType tri
         PANEL_RES_X - PAGE_HORIZONTAL_MARGIN_PX*2, _colorTextSecondary);
 
     uint8_t signWidth = SCHEDULE_BUS_SIGN_WIDTH_PX;
-    uint8_t row = PAGE_TOP_HEADER_SIZE_PX+1;
+    uint8_t row = PAGE_TOP_HEADER_SIZE_PX+8;
 
     _trackingBusIndicatorPositions.clear();
 
@@ -75,11 +75,11 @@ void MatrixDisplay::drawBusSchedulePage(RouteGroupData& data, RouteGroupType tri
         const auto &destination = data.routeDestinations[i]; 
 
         // Draw LTR. RouteNumber, then RouteLabel
-        drawRouteSign(destination.routeType, PAGE_HORIZONTAL_MARGIN_PX, row-1, SCHEDULE_BUS_SIGN_WIDTH_PX, destination.routeNumber.c_str());
+        drawRouteSign(destination.routeType, PAGE_HORIZONTAL_MARGIN_PX, row-8, SCHEDULE_BUS_SIGN_WIDTH_PX, destination.routeNumber.c_str());
         drawText(PAGE_HORIZONTAL_MARGIN_PX + SCHEDULE_BUS_SIGN_WIDTH_PX + SCHEDULE_BUS_SIGN_AND_BUS_LABEL_MARGIN_PX, row, shortenRouteDestination(destination.routeDestination).c_str());
 
         // Foreach trip: 
-        uint8_t xPos = PANEL_RES_X - 1 - PAGE_HORIZONTAL_MARGIN_PX;
+        uint8_t xPos = PANEL_RES_X - 3 - PAGE_HORIZONTAL_MARGIN_PX;
         int8_t j = SCHEDULE_MAX_TRIPS - 1;
         if(destination.trips.size() < j+1)
             j = destination.trips.size() - 1;
@@ -88,7 +88,7 @@ void MatrixDisplay::drawBusSchedulePage(RouteGroupData& data, RouteGroupType tri
             const auto &trip = destination.trips[j];
 
             //Draw RTL. MinuteSymbol, then ArrivalTime
-            drawMinuteSymbol(xPos, row);
+            drawMinuteSymbol(xPos, row-7);
             String arrivalStr = String(trip.arrivalTime);
             const char* arrivalCStr = arrivalStr.c_str();
             uint8_t arrivalEndXPos = xPos - SCHEDULE_BUS_MINUTE_SYMBOL_AND_ARRIVAL_TIME_MARGIN_PX;
@@ -97,7 +97,7 @@ void MatrixDisplay::drawBusSchedulePage(RouteGroupData& data, RouteGroupType tri
 
             if(trip.arrivalIsEstimated) {
                 uint8_t trackingIndicatorXPos = arrivalStartXPos - SCHEDULE_BUS_ARRIVAL_TIME_AND_TRACKING_INDICATOR_MARGIN_PX;
-                _trackingBusIndicatorPositions.push_back(std::make_pair(trackingIndicatorXPos, row));
+                _trackingBusIndicatorPositions.push_back(std::make_pair(trackingIndicatorXPos, row-7));
             }
 
             xPos -= SCHEDULE_BUS_BETWEEN_TRIPS_SPACING_PX;
@@ -419,15 +419,7 @@ void MatrixDisplay::drawRouteSign(RouteType type, uint8_t x, uint8_t y, uint8_t 
         _dma_display->fillRect(x, y, width, height, _colorRouteLocal);
     }
 
-    int16_t  x1, y1;
-    uint16_t w, h;
-    _dma_display->getTextBounds(text, 0, 0, &x1, &y1, &w, &h);
-
-    uint16_t cursorX = (width-w)/2+x+1;
-    uint16_t cursorY = y+1;
-    _dma_display->setCursor(cursorX, cursorY);
-    _dma_display->setTextColor(_colorTextRoute);
-    _dma_display->print(text);
+    drawCenteredText(x+width/2, y+8, text, _colorTextRoute, &Font5x7Fixed);
 }
 
 void MatrixDisplay::drawMinuteSymbol(uint8_t x, uint8_t y) {
@@ -471,11 +463,11 @@ void MatrixDisplay::drawASCWWImage(int x, int y, int width, int height, const ch
 
 String MatrixDisplay::shortenRouteDestination(const String& label) {
     String out = String(label);
-    out.replace("Pasture", "");
-    out.replace("Barrhaven", "Barrhvn");
-    out.replace("Centre", "C");
+    out.replace("Pasture", "P");
+    // out.replace("Barrhaven", "Barrhvn");
+    out.replace("Centre", "");
     out.replace("Auriga", "A");
-    out.replace("Corners", "Cnrs");
+    // out.replace("Corners", "Cnrs");
     return out;
 }
 

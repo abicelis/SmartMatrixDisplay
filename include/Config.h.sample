@@ -12,7 +12,7 @@
 // For more info, see: https://www.octranspo.com/en/plan-your-trip/travel-tools/developers/dev-doc#method-GetNextTripsForStop
 
 // OpenMeteoAPI
-#define OPEN_METEO_API_ENDPOINT "https://api.open-meteo.com/v1/forecast?latitude=45.354305&longitude=-75.73605&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,snowfall,weather_code,wind_speed_10m,wind_gusts_10m&daily=weather_code&timeformat=unixtime&timezone=America%2FNew_York&forecast_days=1"
+#define OPEN_METEO_API_ENDPOINT "https://api.open-meteo.com/v1/forecast?latitude=45.354305&longitude=-75.73605&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation_probability,precipitation,weather_code&daily=sunrise,sunset&timezone=America%2FNew_York&forecast_days=2"
 #define OPEN_METEO_API_ENDPOINT_TRIES 2
 #define OPEN_METEO_API_HOUR_STEP 1
 
@@ -58,7 +58,7 @@
 #define SCHEDULE_BUS_SIGN_WIDTH_PX 22
 #define SCHEDULE_BUS_SIGN_AND_BUS_LABEL_MARGIN_PX 4
 
-#define SCHEDULE_BUS_MINUTE_SYMBOL_AND_ARRIVAL_TIME_MARGIN_PX 0
+#define SCHEDULE_BUS_MINUTE_SYMBOL_AND_ARRIVAL_TIME_MARGIN_PX 1
 #define SCHEDULE_BUS_ARRIVAL_TIME_AND_TRACKING_INDICATOR_MARGIN_PX 2
 #define SCHEDULE_BUS_BETWEEN_TRIPS_SPACING_PX 22
 
@@ -71,7 +71,7 @@
 #define SCHEDULE_ICON_Y_POSITION 1
 
 #define SCHEDULE_TITLE_X_POSITION 13
-#define SCHEDULE_TITLE_Y_POSITION 2
+#define SCHEDULE_TITLE_Y_POSITION 9
 
 // UI - WEATHER PAGE
 #define WEATHER_PAGE_TITLE_X_POSITION 3
