@@ -46,7 +46,7 @@ void MatrixDisplay::drawBusSchedulePage(RouteGroupData& data, RouteGroupType tri
 
     //Draw icon
     // _dma_display->drawBitmap(SCHEDULE_BUS_X_POSITION, SCHEDULE_BUS_Y_POSITION, icon_Bus, 7, 9, _colorTextPrimary);
-    _dma_display->drawRGBBitmap(SCHEDULE_BUS_X_POSITION, SCHEDULE_BUS_Y_POSITION, icon_OCTranspoLogo, 9, 9);
+    _dma_display->drawRGBBitmap(SCHEDULE_ICON_X_POSITION, SCHEDULE_ICON_Y_POSITION, icon_OCTranspoLogo, 9, 9);
 
     // Draw Title
     if(tripsType==VickyCommute) {
@@ -60,14 +60,14 @@ void MatrixDisplay::drawBusSchedulePage(RouteGroupData& data, RouteGroupType tri
     }
 
     // Draw clock
-    drawTextEnd(SCHEDULE_BUS_CLOCK_X_POSITION, SCHEDULE_BUS_CLOCK_Y_POSITION, currentTime, _colorTextPrimary, &Font5x7Fixed);
+    drawTextEnd(PAGE_CLOCK_X_POSITION, PAGE_CLOCK_Y_POSITION, currentTime, _colorTextPrimary, &Font5x7Fixed);
 
     // Draw Horizontal rule
-    _dma_display->drawFastHLine(SCHEDULE_HORIZONTAL_MARGIN_PX, SCHEDULE_TOP_HEADER_SIZE_PX-4,
-        PANEL_RES_X - SCHEDULE_HORIZONTAL_MARGIN_PX*2, _colorTextSecondary);
+    _dma_display->drawFastHLine(PAGE_HORIZONTAL_MARGIN_PX, PAGE_TOP_HEADER_SIZE_PX-4,
+        PANEL_RES_X - PAGE_HORIZONTAL_MARGIN_PX*2, _colorTextSecondary);
 
     uint8_t signWidth = SCHEDULE_BUS_SIGN_WIDTH_PX;
-    uint8_t row = SCHEDULE_TOP_HEADER_SIZE_PX+1;
+    uint8_t row = PAGE_TOP_HEADER_SIZE_PX+1;
 
     _trackingBusIndicatorPositions.clear();
 
@@ -75,11 +75,11 @@ void MatrixDisplay::drawBusSchedulePage(RouteGroupData& data, RouteGroupType tri
         const auto &destination = data.routeDestinations[i]; 
 
         // Draw LTR. RouteNumber, then RouteLabel
-        drawRouteSign(destination.routeType, SCHEDULE_HORIZONTAL_MARGIN_PX, row-1, SCHEDULE_BUS_SIGN_WIDTH_PX, destination.routeNumber.c_str());
-        drawText(SCHEDULE_HORIZONTAL_MARGIN_PX + SCHEDULE_BUS_SIGN_WIDTH_PX + SCHEDULE_BUS_SIGN_AND_BUS_LABEL_MARGIN_PX, row, shortenRouteDestination(destination.routeDestination).c_str());
+        drawRouteSign(destination.routeType, PAGE_HORIZONTAL_MARGIN_PX, row-1, SCHEDULE_BUS_SIGN_WIDTH_PX, destination.routeNumber.c_str());
+        drawText(PAGE_HORIZONTAL_MARGIN_PX + SCHEDULE_BUS_SIGN_WIDTH_PX + SCHEDULE_BUS_SIGN_AND_BUS_LABEL_MARGIN_PX, row, shortenRouteDestination(destination.routeDestination).c_str());
 
         // Foreach trip: 
-        uint8_t xPos = PANEL_RES_X - 1 - SCHEDULE_HORIZONTAL_MARGIN_PX;
+        uint8_t xPos = PANEL_RES_X - 1 - PAGE_HORIZONTAL_MARGIN_PX;
         int8_t j = SCHEDULE_MAX_TRIPS - 1;
         if(destination.trips.size() < j+1)
             j = destination.trips.size() - 1;
@@ -123,11 +123,11 @@ void MatrixDisplay::drawWeatherPage(WeatherData& weatherData, const char* curren
     drawText(WEATHER_PAGE_TITLE_X_POSITION, WEATHER_PAGE_TITLE_Y_POSITION, currentDateShort);
 
     // Draw clock
-    drawTextEnd(SCHEDULE_BUS_CLOCK_X_POSITION, SCHEDULE_BUS_CLOCK_Y_POSITION, currentTime, _colorTextPrimary, &Font5x7Fixed);
+    drawTextEnd(PAGE_CLOCK_X_POSITION, PAGE_CLOCK_Y_POSITION, currentTime, _colorTextPrimary, &Font5x7Fixed);
 
     // Draw Horizontal rule
-    _dma_display->drawFastHLine(SCHEDULE_HORIZONTAL_MARGIN_PX, SCHEDULE_TOP_HEADER_SIZE_PX-4,
-        PANEL_RES_X - SCHEDULE_HORIZONTAL_MARGIN_PX*2, _colorTextSecondary);
+    _dma_display->drawFastHLine(PAGE_HORIZONTAL_MARGIN_PX, PAGE_TOP_HEADER_SIZE_PX-4,
+        PANEL_RES_X - PAGE_HORIZONTAL_MARGIN_PX*2, _colorTextSecondary);
 
     // Divider Lines
     _dma_display->drawFastVLine(32, 14, 48, _colorTextSecondary);
@@ -157,18 +157,18 @@ void MatrixDisplay::drawSleepPage() {
 
 void MatrixDisplay::drawClock(const char* currentTime) {   
     uint8_t maxClockWidth = 28; 
-    _dma_display->fillRect(SCHEDULE_BUS_CLOCK_X_POSITION - maxClockWidth, SCHEDULE_BUS_CLOCK_Y_POSITION-7, 
+    _dma_display->fillRect(PAGE_CLOCK_X_POSITION - maxClockWidth, PAGE_CLOCK_Y_POSITION-7, 
                            maxClockWidth, 7, _colorBlack);
-    drawTextEnd(SCHEDULE_BUS_CLOCK_X_POSITION, SCHEDULE_BUS_CLOCK_Y_POSITION, currentTime, _colorTextPrimary, &Font5x7Fixed);
+    drawTextEnd(PAGE_CLOCK_X_POSITION, PAGE_CLOCK_Y_POSITION, currentTime, _colorTextPrimary, &Font5x7Fixed);
 }
 
 void MatrixDisplay::drawPageBar(float percentComplete) {
-    uint8_t fullBarWidth = PANEL_RES_X - SCHEDULE_HORIZONTAL_MARGIN_PX*2;
+    uint8_t fullBarWidth = PANEL_RES_X - PAGE_HORIZONTAL_MARGIN_PX*2;
     uint8_t barWidth = fullBarWidth;
     if(percentComplete < 1)
         barWidth = percentComplete*fullBarWidth;
 
-    _dma_display->drawFastHLine(SCHEDULE_HORIZONTAL_MARGIN_PX, SCHEDULE_TOP_HEADER_SIZE_PX-4,
+    _dma_display->drawFastHLine(PAGE_HORIZONTAL_MARGIN_PX, PAGE_TOP_HEADER_SIZE_PX-4,
         barWidth, _colorTextPrimary);
 }
 
