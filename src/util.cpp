@@ -28,7 +28,11 @@ void currentHourMinute(char* buffer, size_t bufferSize) {
     time_t now;
     time(&now);
     struct tm * timeinfo = localtime(&now);
-    strftime (buffer, bufferSize, "%H:%M", timeinfo);
+    strftime (buffer, bufferSize, "%I:%M", timeinfo);
+
+
+    if (buffer[0] == '0')   // HH:MM format, Remove first 0 if necessary. e.g '08:03\0' -> '8:03\0'  (\0 = null char)
+        memmove(buffer, buffer+1, 5);
 }
 
 void printTrips(const RouteGroupData& data) {
