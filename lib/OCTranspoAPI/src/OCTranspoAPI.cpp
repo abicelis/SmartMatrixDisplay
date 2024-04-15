@@ -44,7 +44,7 @@ void OCTranspoAPI::fetchTripsFor(RouteGroupData& data, const String& stopNo, con
 
     if(httpCode != 200) {
         #ifdef DEBUG
-        Serial.println("Warning: OC transpo endpoint returned" + String(httpCode));
+        Serial.println("Warning: OC transpo endpoint returned " + String(httpCode));
         #endif
     } else {
         JsonDocument doc;
@@ -61,8 +61,12 @@ void OCTranspoAPI::fetchTripsFor(RouteGroupData& data, const String& stopNo, con
             // serializeJsonPretty(trip, out);
             // Serial.println(out);
             int arrivalTime = trip["AdjustedScheduleTime"].as<int>();
-            if(arrivalTime > OCTRANSPO_API_MAX_ARRIVAL_TIME_MINUTES || arrivalTime < OCTRANSPO_API_MIN_ARRIVAL_TIME_MINUTES)
-                break;
+            if(arrivalTime > OCTRANSPO_API_MAX_ARRIVAL_TIME_MINUTES || arrivalTime < OCTRANSPO_API_MIN_ARRIVAL_TIME_MINUTES) {
+                #ifdef DEBUG
+                Serial.println("Removed trip with extreme arrivalTime = ");
+                Serial.print(arrivalTime);
+                #endif
+            }
             arrivalTime -= OCTRANSPO_API_MINUTES_TO_SUBTRACT_FROM_ARRIVAL_TIME;
             String routeDestination = trip["TripDestination"];
             float adjustmentAge = trip["AdjustmentAge"].as<float>();
