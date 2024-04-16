@@ -150,7 +150,7 @@ void MatrixDisplay::drawWeatherPage(WeatherData& weatherData, const char* curren
 }
 
 void MatrixDisplay::drawSleepPage() {
-    _dma_display->clearScreen();
+    clearScreen();
     drawText(48, 30, "Zzzz..");
 }
 

@@ -234,7 +234,6 @@ void checkAppStateAndContinueFromThere() {
             if(result == pdPASS) {
                 Serial.println("FetchWeather task launched successfully!");
                 nextCheckMillis = currentMillis + INTERVAL_PAGE_LIFETIME;
-
             } else if(result == errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY) {
                 Serial.print("ERROR: Task creation failed due to insufficient memory! HEAP MEM=");
                 Serial.println(xPortGetFreeHeapSize());
