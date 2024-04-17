@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <vector>
 
-enum AppState { Initializing, NextPageLoading, NextPageLoaded, NextPageErrorLoading, Sleeping };
+enum AppState { Initializing, NextPageLoading, NextPageLoaded, NextPageErrorLoading, Sleeping, DeepSleeping };
 enum AppPage { NoPage, VickyCommutePage, NorthSouthPage, EastWestPage, WeatherPage};
 
 enum RouteType { FrequentRoute, LocalRoute };

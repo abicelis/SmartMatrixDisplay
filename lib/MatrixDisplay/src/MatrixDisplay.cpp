@@ -149,9 +149,11 @@ void MatrixDisplay::drawWeatherPage(WeatherData& weatherData, const char* curren
     
 }
 
-void MatrixDisplay::drawSleepPage() {
+void MatrixDisplay::drawSleepingPage() {
     clearScreen();
-    drawText(48, 30, "Zzzz..");
+    xTaskCreatePinnedToCore(SleepingAnimationTaskFunction, "SleepingAnimationTaskFunction",
+        STACK_DEPTH_SLEEPING_ANIMATION_TASK, this, 1, &sleepingAnimationTaskHandle, 1);
+    Serial.println("SleepingAnimationTaskFunction LAUNCHED");
 }
 
 
@@ -220,6 +222,18 @@ void MatrixDisplay::clearScreen() {
             #endif
         }
         extraWeatherDataTaskHandle = nullptr;
+    }
+    if( sleepingAnimationTaskHandle != NULL ) {
+        if(eTaskGetState(sleepingAnimationTaskHandle) != eDeleted) {
+            Serial.println("SleepingAnimationTaskFunction DELETED");
+            vTaskDelete( sleepingAnimationTaskHandle );
+
+            #ifdef DEBUG
+            UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(sleepingAnimationTaskHandle);
+            Serial.println("SleepingAnimationTaskFunction stack used this memory: " + String(uxHighWaterMark));
+            #endif
+        }
+        sleepingAnimationTaskHandle = nullptr;
     }
     _dma_display->clearScreen();
 }
@@ -357,6 +371,77 @@ void MatrixDisplay::BrightnessTaskFunction(void *pvParameters) {
             vTaskDelay(pdMS_TO_TICKS(10));
         }
         vTaskDelay(pdMS_TO_TICKS(500));
+    }
+}
+
+void MatrixDisplay::SleepingAnimationTaskFunction(void *pvParameters) {
+    MatrixDisplay* instance = static_cast<MatrixDisplay*>(pvParameters);
+    MatrixPanel_I2S_DMA* dma_display = instance->_dma_display;
+
+    Serial.print("SleepingAnimationTaskFunction INIT");
+    int brightnessSteps = 10;
+    int brightness = 0;
+    bool directionUp = false;
+    uint8_t x, y;
+    for(;;) {
+
+        x = random(5, 91);
+        y = random(5, 19);
+
+        brightness = 0;
+        while(brightness < brightnessSteps) {
+            uint16_t color = colorWithIntensity(dma_display, COLOR_TEXT_PRIMARY_R, 
+                                COLOR_TEXT_PRIMARY_G, COLOR_TEXT_PRIMARY_B, (float)brightness/brightnessSteps);
+            dma_display->drawBitmap(x, y, icon_Sleep1, 32, 40, color);
+            brightness=brightness+1;
+            vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_STEP_MS));
+        }
+        vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_TIME_BETWEEN_PHASE_MS));
+        brightness = 0;
+        while(brightness < brightnessSteps) {
+            uint16_t color = colorWithIntensity(dma_display, COLOR_TEXT_PRIMARY_R, 
+                                COLOR_TEXT_PRIMARY_G, COLOR_TEXT_PRIMARY_B, (float)brightness/brightnessSteps);
+            dma_display->drawBitmap(x, y, icon_Sleep2, 32, 40, color);
+            brightness=brightness+1;
+            vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_STEP_MS));
+        }
+        vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_TIME_BETWEEN_PHASE_MS));
+        brightness = 0;
+        while(brightness < brightnessSteps) {
+            uint16_t color = colorWithIntensity(dma_display, COLOR_TEXT_PRIMARY_R, 
+                                COLOR_TEXT_PRIMARY_G, COLOR_TEXT_PRIMARY_B, (float)brightness/brightnessSteps);
+            dma_display->drawBitmap(x, y, icon_Sleep3, 32, 40, color);
+            brightness=brightness+1;
+            vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_STEP_MS));
+        }
+        vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_TIME_BETWEEN_PHASE_MS));
+        brightness = 0;
+        while(brightness < brightnessSteps) {
+            uint16_t color = colorWithIntensity(dma_display, COLOR_TEXT_PRIMARY_R, 
+                                COLOR_TEXT_PRIMARY_G, COLOR_TEXT_PRIMARY_B, (float)brightness/brightnessSteps);
+            dma_display->drawBitmap(x, y, icon_Sleep4, 32, 40, color);
+            brightness=brightness+1;
+            vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_STEP_MS));
+        }
+        vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_TIME_BETWEEN_PHASE_MS));
+        brightness = 0;
+        while(brightness < brightnessSteps) {
+            uint16_t color = colorWithIntensity(dma_display, COLOR_TEXT_PRIMARY_R, 
+                                COLOR_TEXT_PRIMARY_G, COLOR_TEXT_PRIMARY_B, (float)brightness/brightnessSteps);
+            dma_display->drawBitmap(x, y, icon_Sleep5, 32, 40, color);
+            brightness=brightness+1;
+            vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_STEP_MS));
+        }
+        vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_TIME_AFTER_ANIMATION_FULL_MS));
+        brightness = brightnessSteps;
+        while(brightness >= 0) {
+            uint16_t color = colorWithIntensity(dma_display, COLOR_TEXT_PRIMARY_R, 
+                                COLOR_TEXT_PRIMARY_G, COLOR_TEXT_PRIMARY_B, (float)brightness/brightnessSteps);
+            dma_display->drawBitmap(x, y, icon_Sleep6, 32, 40, color);
+            brightness=brightness-1;
+            vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_STEP_MS));
+        }
+        vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_TIME_IDLE_MS));
     }
 }
 

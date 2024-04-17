@@ -52,15 +52,14 @@ void printTrips(const RouteGroupData& data) {
 }
 
 void updateAppState(AppState& appState, AppPage& appPage) {
-    // appState = NextPageLoading;
-    // appPage = WeatherPage;
+    // appState = Sleeping;
+    // appPage = NoPage;
     // return;
-
 
     int hourOfDay = currentHourOfDay();
     bool vickyCommute = hourOfDay >= APPSTATE_VICKY_COMMUTE_HOUR_START && hourOfDay <= APPSTATE_VICKY_COMMUTE_HOUR_END;
-    bool sleeping = hourOfDay >= APPSTATE_SLEEPING_HOUR_START || hourOfDay <= APPSTATE_SLEEPING_HOUR_END;
-    // bool sleeping = false;
+    bool sleeping = hourOfDay == APPSTATE_DEEP_SLEEPING_HOUR_START-1;
+    bool deepSleeping = hourOfDay >= APPSTATE_DEEP_SLEEPING_HOUR_START || hourOfDay <= APPSTATE_DEEP_SLEEPING_HOUR_END;
 
     Serial.print("UpdateAppState - Hour of day=" + String(hourOfDay) + ", Sleeping=" 
         + String(sleeping) + ", VCommute=" + String(vickyCommute));
@@ -76,6 +75,10 @@ void updateAppState(AppState& appState, AppPage& appPage) {
     } else if(sleeping) {
         Serial.println("- Result: Sleeping");
         appState = Sleeping;
+        appPage = NoPage;
+    }  else if(deepSleeping) {
+        Serial.println("- Result: Deep Sleeping");
+        appState = DeepSleeping;
         appPage = NoPage;
     } else {
         Serial.println("- Result: Normal Mode");

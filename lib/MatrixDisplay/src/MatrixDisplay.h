@@ -26,7 +26,7 @@ class MatrixDisplay {
         void drawInitializationPage(uint8_t loadingBarWidthPixels);
         void drawBusSchedulePage(RouteGroupData& data, RouteGroupType tripsType, const char* currentTime);
         void drawWeatherPage(WeatherData& weatherData, const char* currentTime, const char* currentDateShort);
-        void drawSleepPage();
+        void drawSleepingPage();
 
         void drawClock(const char* currentTime);
         void drawPageBar(float percentComplete);
@@ -50,6 +50,9 @@ class MatrixDisplay {
         WeatherData _extraWeatherData;
         TaskHandle_t extraWeatherDataTaskHandle = NULL;
         static void ExtraWeatherDataTaskFunction(void *pvParameters);
+
+        TaskHandle_t sleepingAnimationTaskHandle = NULL;
+        static void SleepingAnimationTaskFunction(void *pvParameters);
 
         uint8_t _panelBrightness = 20;
         uint8_t _targetBrightness = 20;

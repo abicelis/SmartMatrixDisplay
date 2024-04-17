@@ -75,6 +75,8 @@ void FetchWeather(void *pvParameters) {
 }
 
 void setup() {
+    randomSeed(analogRead(0)); // Seed pseudorandom random()
+
     Serial.begin(115200);
     delay(300);
     Serial.println("\n\n     SMART LED MATRIX DISPLAY");
@@ -201,7 +203,7 @@ void loop() {
         } else if (appState == NextPageErrorLoading) {
             Serial.println("Error loading next page, restarting ESP.");
             ESP.restart();
-        } else if (appState == Sleeping) {
+        } else if (appState == Sleeping || appState == DeepSleeping) {
             checkAppStateAndContinueFromThere();
         }
     }
@@ -243,13 +245,18 @@ void checkAppStateAndContinueFromThere() {
         }
     } else if(appState == Sleeping) {
         Serial.println("Sleeping now");
-        // TODO - Something more interesting here? Maybe a cool animation?
-        display.drawSleepPage();
+        display.drawSleepingPage();
+        nextCheckMillis = currentMillis + 3600000; // 1 hour
+    } else if(appState == DeepSleeping) {
+        Serial.println("DEEP Sleeping now");
+        display.clearScreen();
 
         // TODO Stay in this state for WAY longer, 
         // TODO But make sure to set nextCheckMillis so that we immediately wake up when we need to
-        // At APPSTATE_SLEEPING_HOUR_END
+        // At APPSTATE_DEEP_SLEEPING_HOUR_END
         // For now, we sleep for INTERVAL_PAGE_LIFETIME then re-check and re-check... 
+        // also consider shutting down wifi and other things in this state..?
         nextCheckMillis = currentMillis + INTERVAL_PAGE_LIFETIME;
     }
+
 }
