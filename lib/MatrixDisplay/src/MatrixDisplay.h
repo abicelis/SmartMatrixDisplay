@@ -32,7 +32,8 @@ class MatrixDisplay {
         void drawPageBar(float percentComplete);
 
         void setBrightness(uint8_t brightnessStep);
-        void clearScreen();        
+        void clearScreen();   
+        void drawRainbow();     
     private:
         MatrixPanel_I2S_DMA *_dma_display = nullptr;
         uint16_t _colorBlack = _dma_display->color565(0, 0, 0);
@@ -60,7 +61,6 @@ class MatrixDisplay {
         static void BrightnessTaskFunction(void *pvParameters);
         
         void drawPixel(uint8_t x, uint8_t y);
-        void drawChar(uint8_t x, uint8_t y, uint8_t chaar);
         void drawText(uint8_t x, uint8_t y, const char* text);
         void drawText(uint8_t x, uint8_t y, const char* text, uint16_t color, const GFXfont *f);
         uint8_t drawCenteredText(uint8_t x, uint8_t y, const char* text);

@@ -25,6 +25,30 @@ void MatrixDisplay::begin(int8_t r1_pin, int8_t g1_pin, int8_t b1_pin, int8_t r2
     _dma_display->clearScreen();
     _dma_display->fillScreen(_colorBlack);
 
+
+
+    // float t = 0;
+    // float brightness = 0.5;
+
+    // while(true) {
+    //     for (int x = 12; x < 116; ++x) {
+    //         for (int y = 12; y < 52; ++y) {
+    //             auto xy = x / 30.0f - y / 30.0f;
+    //             auto mpy = M_PI * 2 / 3;
+    //             auto r = brightness * (sinf(xy + t) * 120 + 120);
+    //             auto g = brightness * (sinf(xy + mpy + t) * 120 + 120);
+    //             auto b = brightness * (sinf(xy + mpy * 2 + t) * 120 + 120);
+    //             _dma_display->drawPixelRGB888(x, y, r, g, b);
+    //         }
+    //     }
+
+    //     delay(30);
+    //     t += 0.005;
+    //     if(t > M_PI * 2)
+    //         t=0;
+    // }
+
+
     xTaskCreatePinnedToCore(BrightnessTaskFunction, "BrightnessTaskFunction", 
         1024, this, 1, &brightnessTaskHandle, 1);
 }
@@ -52,7 +76,10 @@ void MatrixDisplay::drawBusSchedulePage(RouteGroupData& data, RouteGroupType tri
     if(tripsType==VickyCommute) {
         const char* title = "Vicky";
         drawText(SCHEDULE_TITLE_X_POSITION, SCHEDULE_TITLE_Y_POSITION, title);
-        drawChar(SCHEDULE_TITLE_X_POSITION + getTextWidth(title)+2, SCHEDULE_TITLE_Y_POSITION, 0x03);
+        
+        _dma_display->setCursor(_dma_display->getCursorX()+2, _dma_display->getCursorY()-1);
+        _dma_display->setFont(); // Use default font
+        _dma_display->write(0x03);
     } else if(tripsType==NorthSouth) {
         drawText(SCHEDULE_TITLE_X_POSITION, SCHEDULE_TITLE_Y_POSITION, "North-South");
     } else if(tripsType==EastWest) {
@@ -448,12 +475,6 @@ void MatrixDisplay::SleepingAnimationTaskFunction(void *pvParameters) {
 
 void MatrixDisplay::drawPixel(uint8_t x, uint8_t y) {
     _dma_display->drawPixel(x, y, _colorTextPrimary);
-}
-
-void MatrixDisplay::drawChar(uint8_t x, uint8_t y, uint8_t chaar) {
-    _dma_display->setTextColor(_colorTextPrimary);
-    _dma_display->setCursor(x, y);
-    _dma_display->write(chaar);
 }
 
 void MatrixDisplay::drawText(uint8_t x, uint8_t y, const char* text) {
