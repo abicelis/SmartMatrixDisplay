@@ -119,8 +119,8 @@
 // Memory management - Change these if you know what you're doing
 // This stack depth is specified in words, i believe 1 word = 4 bytes on the ESP32
 // use Util.printHighWaterMarkForTask() to troubleshoot
-#define STACK_DEPTH_TRIPS_TASK 8000                   // Remaining stack ~2k words
-#define STACK_DEPTH_WEATHER_TASK 8000                 // Remaining stack ~2k words
+#define STACK_DEPTH_ROUTES_TASK 8000                  // Remaining stack ~2k words
+#define STACK_DEPTH_FETCH_WEATHER_TASK 8000           // Remaining stack ~2k words
 #define STACK_DEPTH_TRACKING_BUS_INDICATORS_TASK 1100 // Remaining stack ~500 words
 #define STACK_DEPTH_EXTRA_WEATHER_DATA_TASK 1500      // Remaining stack ~500 words
 #define STACK_DEPTH_BRIGHTNESS_TASK 700               // Remaining stack ~200 words

@@ -62,11 +62,13 @@ void updateAppState(AppState& appState, AppPage& appPage) {
     bool sleeping = hourOfDay == APPSTATE_DEEP_SLEEPING_HOUR_START-1;
     bool deepSleeping = hourOfDay >= APPSTATE_DEEP_SLEEPING_HOUR_START || hourOfDay <= APPSTATE_DEEP_SLEEPING_HOUR_END;
 
-    Serial.print("UpdateAppState - Hour of day=" + String(hourOfDay) + ", Sleeping=" 
-        + String(sleeping) + ", VCommute=" + String(vickyCommute));
+    Serial.print("UpdateAppState - Hour=" + String(hourOfDay) 
+            + ", Sleep=" + String(sleeping) +
+            + ", DeepSleep=" + String(deepSleeping) +
+             ", VCommute=" + String(vickyCommute) + " ");
 
     if(vickyCommute) {
-        // Serial.println("- Result: VickyCommute");
+        Serial.println("- Result: VickyCommute");
         appState = NextPageLoading;
         
         if(appPage == NoPage || appPage == WeatherPage)
@@ -74,22 +76,23 @@ void updateAppState(AppState& appState, AppPage& appPage) {
         else
             appPage = WeatherPage;
     } else if(sleeping) {
-        // Serial.println("- Result: Sleeping");
+        Serial.println("- Result: Sleeping");
         appState = Sleeping;
         appPage = NoPage;
     }  else if(deepSleeping) {
-        // Serial.println("- Result: Deep Sleeping");
+        Serial.println("- Result: Deep Sleeping");
         appState = DeepSleeping;
         appPage = NoPage;
     } else {
-        // Serial.println("- Result: Normal Mode");
         appState = NextPageLoading;
-        
         if(appPage == NoPage || appPage == WeatherPage) {
+            Serial.println("- Result: NorthSouth");
             appPage = NorthSouthPage;
         } else if(appPage == NorthSouthPage) {
+            Serial.println("- Result: EastWestPage");
             appPage = EastWestPage;
         } else { //EastWestPage 
+        Serial.println("- Result: WeatherPage");
             appPage = WeatherPage;
         }
     }

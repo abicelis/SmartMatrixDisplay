@@ -211,13 +211,12 @@ void loop() {
 
 void checkAppStateAndContinueFromThere() {
     updateAppState(appState, appPage);
-    Serial.println("AppState changed to '" + String(appState) + "'");
     if(appState == NextPageLoading) {
         // Serial.println("Fetching AppPage '" + String(appPage) + "'");
         printAvailableHeapMemory();
 
         if(appPage != WeatherPage) {
-            BaseType_t result = xTaskCreatePinnedToCore(FetchRoutes, "FetchRoutes", STACK_DEPTH_TRIPS_TASK, NULL, 1, &taskHandle, 0);
+            BaseType_t result = xTaskCreatePinnedToCore(FetchRoutes, "FetchRoutes", STACK_DEPTH_ROUTES_TASK, NULL, 1, &taskHandle, 0);
             if(result == pdPASS) {
                 Serial.println("FetchRoutes task launched");
                 nextCheckMillis = currentMillis + INTERVAL_PAGE_LIFETIME;
@@ -228,7 +227,7 @@ void checkAppStateAndContinueFromThere() {
                 Serial.print("ERROR: Task creation failed!!!");
             }
         } else {
-            BaseType_t result = xTaskCreatePinnedToCore(FetchWeather, "FetchWeather", STACK_DEPTH_WEATHER_TASK, NULL, 1, &taskHandle, 0);
+            BaseType_t result = xTaskCreatePinnedToCore(FetchWeather, "FetchWeather", STACK_DEPTH_FETCH_WEATHER_TASK, NULL, 1, &taskHandle, 0);
             if(result == pdPASS) {
                 Serial.println("FetchWeather task launched");
                 nextCheckMillis = currentMillis + INTERVAL_PAGE_LIFETIME;
