@@ -217,7 +217,7 @@ void checkAppStateAndContinueFromThere() {
     Serial.println("AppState changed to '" + String(appState) + "'");
     if(appState == NextPageLoading) {
         Serial.println("Fetching AppPage '" + String(appPage) + "'");
-        Serial.print("AVAILABLE HEAP MEMORY =");
+        Serial.print(">>>> AVAILABLE HEAP MEMORY = ");
         Serial.println(xPortGetFreeHeapSize());
 
         if(appPage != WeatherPage) {

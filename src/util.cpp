@@ -65,7 +65,7 @@ void updateAppState(AppState& appState, AppPage& appPage) {
         + String(sleeping) + ", VCommute=" + String(vickyCommute));
 
     if(vickyCommute) {
-        Serial.println("- Result: VickyCommute");
+        // Serial.println("- Result: VickyCommute");
         appState = NextPageLoading;
         
         if(appPage == NoPage || appPage == WeatherPage)
@@ -73,15 +73,15 @@ void updateAppState(AppState& appState, AppPage& appPage) {
         else
             appPage = WeatherPage;
     } else if(sleeping) {
-        Serial.println("- Result: Sleeping");
+        // Serial.println("- Result: Sleeping");
         appState = Sleeping;
         appPage = NoPage;
     }  else if(deepSleeping) {
-        Serial.println("- Result: Deep Sleeping");
+        // Serial.println("- Result: Deep Sleeping");
         appState = DeepSleeping;
         appPage = NoPage;
     } else {
-        Serial.println("- Result: Normal Mode");
+        // Serial.println("- Result: Normal Mode");
         appState = NextPageLoading;
         
         if(appPage == NoPage || appPage == WeatherPage) {

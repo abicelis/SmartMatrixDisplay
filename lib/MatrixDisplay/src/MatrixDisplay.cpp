@@ -134,11 +134,10 @@ void MatrixDisplay::drawBusSchedulePage(RouteGroupData& data, RouteGroupType tri
     }
     fadeInScreen();
 
-    // Start DisplayLooper Task
     if(_trackingBusIndicatorPositions.size() > 0) {
         xTaskCreatePinnedToCore(TrackingBusIndicatorTaskFunction, "TrackingBusIndicatorTask", 
             STACK_DEPTH_TRACKING_BUS_INDICATORS_TASK, this, 1, &trackingBusIndicatorTaskHandle, 1);
-        Serial.println("TrackingBusIndicatorTask LAUNCHED");
+        // Serial.println("TrackingBusIndicatorTask LAUNCHED");
     }
 }
 
@@ -172,7 +171,7 @@ void MatrixDisplay::drawWeatherPage(WeatherData& weatherData, const char* curren
     _extraWeatherData = weatherData;
     xTaskCreatePinnedToCore(ExtraWeatherDataTaskFunction, "ExtraWeatherDataTaskFunction",
         STACK_DEPTH_EXTRA_WEATHER_DATA_TASK, this, 1, &extraWeatherDataTaskHandle, 1);
-    Serial.println("ExtraWeatherDataTask LAUNCHED");
+    // Serial.println("ExtraWeatherDataTask LAUNCHED");
     
 }
 
@@ -180,7 +179,7 @@ void MatrixDisplay::drawSleepingPage() {
     clearScreen();
     xTaskCreatePinnedToCore(SleepingAnimationTaskFunction, "SleepingAnimationTaskFunction",
         STACK_DEPTH_SLEEPING_ANIMATION_TASK, this, 1, &sleepingAnimationTaskHandle, 1);
-    Serial.println("SleepingAnimationTaskFunction LAUNCHED");
+    // Serial.println("SleepingAnimationTaskFunction LAUNCHED");
 }
 
 
@@ -218,10 +217,8 @@ void MatrixDisplay::setBrightness(uint8_t brightnessStep) {
     if(clampedBrightness != _targetBrightness) {
         _targetBrightness = clampedBrightness;
         
-        #ifdef DEBUG
-        Serial.print("Panel brightness target set to ");
-        Serial.println(_targetBrightness);
-        #endif
+        // Serial.print("Panel brightness target set to ");
+        // Serial.println(_targetBrightness);
     }
 }
 
@@ -275,8 +272,8 @@ void MatrixDisplay::TrackingBusIndicatorTaskFunction(void *pvParameters) {
     std::vector<std::pair<uint8_t, uint8_t>>& indicatorPositions = instance->_trackingBusIndicatorPositions;
     MatrixPanel_I2S_DMA* dma_display = instance->_dma_display;
 
-    Serial.print("TrackingBusIndicatorTask INIT indicatorPositions=");
-    Serial.println(indicatorPositions.size());
+    // Serial.print("TrackingBusIndicatorTask INIT indicatorPositions=");
+    // Serial.println(indicatorPositions.size());
     int brightnessSteps = 10;
     int brightness = 0;
     bool directionUp = false;
@@ -323,7 +320,7 @@ void MatrixDisplay::ExtraWeatherDataTaskFunction(void *pvParameters) {
     MatrixDisplay* instance = static_cast<MatrixDisplay*>(pvParameters);
     WeatherData& weatherData = instance->_extraWeatherData;
     MatrixPanel_I2S_DMA* dma_display = instance->_dma_display;
-    Serial.println("WeatherInfoTaskFunction INIT");
+    // Serial.println("WeatherInfoTaskFunction INIT");
 
     uint8_t page = 0;
     for(;;) {
@@ -378,7 +375,7 @@ void MatrixDisplay::ExtraWeatherDataTaskFunction(void *pvParameters) {
 
 void MatrixDisplay::BrightnessTaskFunction(void *pvParameters) {
     MatrixDisplay* instance = static_cast<MatrixDisplay*>(pvParameters);
-    Serial.println("BrightnessTaskFunction INIT");
+    // Serial.println("BrightnessTaskFunction INIT");
 
     uint8_t currentBrightness = instance->_panelBrightness;
     for (;;) {
