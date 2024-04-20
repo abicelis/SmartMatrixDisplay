@@ -32,8 +32,7 @@ class MatrixDisplay {
         void drawPageBar(float percentComplete);
 
         void setBrightness(uint8_t brightnessStep);
-        void clearScreen();   
-        void drawRainbow();     
+        void clearScreen();
     private:
         MatrixPanel_I2S_DMA *_dma_display = nullptr;
         uint16_t _colorBlack = _dma_display->color565(0, 0, 0);
@@ -54,6 +53,8 @@ class MatrixDisplay {
 
         TaskHandle_t sleepingAnimationTaskHandle = NULL;
         static void SleepingAnimationTaskFunction(void *pvParameters);
+        TaskHandle_t sleepingAnimationTaskHandle2 = NULL;
+        static void SleepingAnimationTaskFunction2(void *pvParameters);
 
         uint8_t _panelBrightness = 20;
         uint8_t _targetBrightness = 20;

@@ -167,6 +167,8 @@ void MatrixDisplay::drawSleepingPage() {
     clearScreen();
     xTaskCreatePinnedToCore(SleepingAnimationTaskFunction, "SleepingAnimationTaskFunction",
         STACK_DEPTH_SLEEPING_ANIMATION_TASK, this, 1, &sleepingAnimationTaskHandle, 1);
+    xTaskCreatePinnedToCore(SleepingAnimationTaskFunction2, "SleepingAnimationTaskFunction2",
+        STACK_DEPTH_SLEEPING_ANIMATION_TASK, this, 1, &sleepingAnimationTaskHandle2, 0);
     // Serial.println("SleepingAnimationTaskFunction LAUNCHED");
 }
 
@@ -231,37 +233,19 @@ void MatrixDisplay::clearScreen() {
         if(eTaskGetState(sleepingAnimationTaskHandle) != eDeleted) {
             Serial.println("SleepingAnimationTaskFunction DELETED");
             printHighWaterMarkForTask(sleepingAnimationTaskHandle);
-            vTaskDelete( sleepingAnimationTaskHandle );
+            vTaskDelete(sleepingAnimationTaskHandle);
         }
         sleepingAnimationTaskHandle = nullptr;
     }
-    _dma_display->clearScreen();
-}
-
-
-void MatrixDisplay::drawRainbow() {
-    clearScreen();
-
-    float t = 0;
-    float brightness = 0.5;
-
-    while(true) {
-        for (int x = 12; x < 116; ++x) {
-            for (int y = 12; y < 52; ++y) {
-                auto xy = x / 30.0f - y / 30.0f;
-                auto mpy = M_PI * 2 / 3;
-                auto r = brightness * (sinf(xy + t) * 120 + 120);
-                auto g = brightness * (sinf(xy + mpy + t) * 120 + 120);
-                auto b = brightness * (sinf(xy + mpy * 2 + t) * 120 + 120);
-                _dma_display->drawPixelRGB888(x, y, r, g, b);
-            }
+    if( sleepingAnimationTaskHandle2 != NULL ) {
+        if(eTaskGetState(sleepingAnimationTaskHandle2) != eDeleted) {
+            Serial.println("SleepingAnimationTaskFunction2 DELETED");
+            printHighWaterMarkForTask(sleepingAnimationTaskHandle2);
+            vTaskDelete(sleepingAnimationTaskHandle2);
         }
-
-        delay(30);
-        t += 0.005;
-        if(t > M_PI * 2)
-            t=0;
+        sleepingAnimationTaskHandle2 = nullptr;
     }
+    _dma_display->clearScreen();
 }
 
 
@@ -412,7 +396,7 @@ void MatrixDisplay::SleepingAnimationTaskFunction(void *pvParameters) {
     for(;;) {
 
         x = random(5, 91);
-        y = random(5, 19);
+        y = random(10, 14);
 
         brightness = 0;
         while(brightness < brightnessSteps) {
@@ -470,7 +454,35 @@ void MatrixDisplay::SleepingAnimationTaskFunction(void *pvParameters) {
         vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_TIME_IDLE_MS));
     }
 }
+void MatrixDisplay::SleepingAnimationTaskFunction2(void *pvParameters) {
+    MatrixDisplay* instance = static_cast<MatrixDisplay*>(pvParameters);
+    MatrixPanel_I2S_DMA* dma_display = instance->_dma_display;
 
+    Serial.print("SleepingAnimationTaskFunction2 INIT");
+    float t = 0;
+    float brightness = 0.5;
+    uint8_t height = 10;
+    uint8_t addYBottomRow = PANEL_RES_Y - height;
+    
+    while(true) {
+        for (int x = 0; x < PANEL_RES_X; ++x) {
+            for (int y = 0; y < 10; ++y) {
+                auto xy = x / 30.0f - y / 30.0f;
+                auto mpy = M_PI * 2 / 3;
+                auto r = brightness * (sinf(xy + t) * 120 + 120);
+                auto g = brightness * (sinf(xy + mpy + t) * 120 + 120);
+                auto b = brightness * (sinf(xy + mpy * 2 + t) * 120 + 120);
+                dma_display->drawPixelRGB888(x, y, r, g, b);
+                dma_display->drawPixelRGB888(x, y+addYBottomRow, r, g, b);
+            }
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(20));
+        t += 0.05;
+        if(t > M_PI * 2)
+            t=0;
+    }
+}
 
 void MatrixDisplay::drawPixel(uint8_t x, uint8_t y) {
     _dma_display->drawPixel(x, y, _colorTextPrimary);
