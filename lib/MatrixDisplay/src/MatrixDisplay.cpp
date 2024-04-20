@@ -2,6 +2,7 @@
 #include <Fonts/FreeSans9pt7b.h>
 #include <Model.h>
 #include <Config.h>
+#include <Util.h>
 #include "MatrixDisplay.h"
 #include "images/images.h"
 #include "images/icons1BitPerPixel.h"
@@ -27,7 +28,7 @@ void MatrixDisplay::begin(int8_t r1_pin, int8_t g1_pin, int8_t b1_pin, int8_t r2
 
 
     xTaskCreatePinnedToCore(BrightnessTaskFunction, "BrightnessTaskFunction", 
-        1024, this, 1, &brightnessTaskHandle, 1);
+        STACK_DEPTH_BRIGHTNESS_TASK, this, 1, &brightnessTaskHandle, 1);
 }
 
 void MatrixDisplay::drawInitializationPage(uint8_t loadingBarWidthPixels) {
@@ -160,7 +161,6 @@ void MatrixDisplay::drawWeatherPage(WeatherData& weatherData, const char* curren
     xTaskCreatePinnedToCore(ExtraWeatherDataTaskFunction, "ExtraWeatherDataTaskFunction",
         STACK_DEPTH_EXTRA_WEATHER_DATA_TASK, this, 1, &extraWeatherDataTaskHandle, 1);
     // Serial.println("ExtraWeatherDataTask LAUNCHED");
-    
 }
 
 void MatrixDisplay::drawSleepingPage() {
@@ -214,36 +214,24 @@ void MatrixDisplay::clearScreen() {
     if( trackingBusIndicatorTaskHandle != NULL ) {
         if(eTaskGetState(trackingBusIndicatorTaskHandle) != eDeleted) {
             Serial.println("TrackingBusIndicatorTask DELETED");
-            vTaskDelete( trackingBusIndicatorTaskHandle );
-            
-            #ifdef DEBUG
-            UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(trackingBusIndicatorTaskHandle);
-            Serial.println("TrackingBusIndicatorTask stack used this memory: " + String(uxHighWaterMark));
-            #endif
+            printHighWaterMarkForTask(trackingBusIndicatorTaskHandle);
+            vTaskDelete(trackingBusIndicatorTaskHandle);
         }
         trackingBusIndicatorTaskHandle = nullptr;
     }
     if( extraWeatherDataTaskHandle != NULL ) {
         if(eTaskGetState(extraWeatherDataTaskHandle) != eDeleted) {
             Serial.println("ExtraWeatherDataTaskFunction DELETED");
-            vTaskDelete( extraWeatherDataTaskHandle );
-
-            #ifdef DEBUG
-            UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(extraWeatherDataTaskHandle);
-            Serial.println("ExtraWeatherDataTaskFunction stack used this memory: " + String(uxHighWaterMark));
-            #endif
+            printHighWaterMarkForTask(extraWeatherDataTaskHandle);
+            vTaskDelete(extraWeatherDataTaskHandle);
         }
         extraWeatherDataTaskHandle = nullptr;
     }
     if( sleepingAnimationTaskHandle != NULL ) {
         if(eTaskGetState(sleepingAnimationTaskHandle) != eDeleted) {
             Serial.println("SleepingAnimationTaskFunction DELETED");
+            printHighWaterMarkForTask(sleepingAnimationTaskHandle);
             vTaskDelete( sleepingAnimationTaskHandle );
-
-            #ifdef DEBUG
-            UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(sleepingAnimationTaskHandle);
-            Serial.println("SleepingAnimationTaskFunction stack used this memory: " + String(uxHighWaterMark));
-            #endif
         }
         sleepingAnimationTaskHandle = nullptr;
     }

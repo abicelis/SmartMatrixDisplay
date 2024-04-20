@@ -5462,7 +5462,6 @@ inline const char* weatherTypeToImage(WeatherType weatherType, bool daytime) {
 		case SlightSnowShowers: 		return IMG_a34;
 		case HeavySnowShowers: 			return IMG_a34;
         case Thunderstorm: 	  			return IMG_a35;
-
-		case Unknown: 	  return NULL;
     }
+	return NULL;
 }

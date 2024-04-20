@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include <time.h>
 #include <string.h>
 #include <ctime>
@@ -52,8 +53,8 @@ void printTrips(const RouteGroupData& data) {
 }
 
 void updateAppState(AppState& appState, AppPage& appPage) {
-    // appState = Sleeping;
-    // appPage = NoPage;
+    // appState = NextPageLoading;
+    // appPage = WeatherPage;
     // return;
 
     int hourOfDay = currentHourOfDay();
@@ -103,4 +104,15 @@ RouteGroupType appPageToRouteGroupType(AppPage appPage) {
         type = EastWest;
 
     return type;
+}
+
+void printHighWaterMarkForTask(TaskHandle_t taskHandle) {
+    Serial.print(">>> Remaining Stack words for Task ");
+    Serial.print(pcTaskGetName(taskHandle));
+    Serial.println(" = " + String(uxTaskGetStackHighWaterMark(taskHandle)));
+}
+
+void printAvailableHeapMemory() {
+    Serial.print(">>>> AVAILABLE HEAP MEMORY = ");
+    Serial.println(xPortGetFreeHeapSize());
 }

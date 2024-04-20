@@ -96,9 +96,7 @@ void OCTranspoAPI::addTrip(RouteGroupData& data, String& routeNumber, String& ro
 }
 
 void OCTranspoAPI::sortTrips(RouteGroupData& data) {
-    #ifdef DEBUG
-    Serial.println("Sort start");
-    #endif
+    // Serial.println("Sort start");
     uint8_t minArrival;
     uint8_t right;
     uint8_t size = data.routeDestinations.size();
@@ -117,9 +115,7 @@ void OCTranspoAPI::sortTrips(RouteGroupData& data) {
             std::swap(data.routeDestinations[left], data.routeDestinations[right]);
         }
     }
-    #ifdef DEBUG
-    Serial.println("Sort end");
-    #endif
+    // Serial.println("Sort end");
 }
 
 

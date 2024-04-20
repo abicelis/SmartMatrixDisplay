@@ -31,8 +31,8 @@
 
 
 // AppState params
-#define APPSTATE_SLEEPING_HOUR_START 22
-#define APPSTATE_SLEEPING_HOUR_END 5
+#define APPSTATE_DEEP_SLEEPING_HOUR_START 22
+#define APPSTATE_DEEP_SLEEPING_HOUR_END 5
 #define APPSTATE_SLEEPING_LIGHT_SENSOR_VALUE_TRESHOLD 100
 #define APPSTATE_VICKY_COMMUTE_HOUR_START 6
 #define APPSTATE_VICKY_COMMUTE_HOUR_END 7
@@ -116,13 +116,15 @@
 
 
 
-
 // Memory management - Change these if you know what you're doing
-#define STACK_DEPTH_TRIPS_TASK 50000
-#define STACK_DEPTH_WEATHER_TASK 40000
-#define STACK_DEPTH_TRACKING_BUS_INDICATORS_TASK 10000
-#define STACK_DEPTH_EXTRA_WEATHER_DATA_TASK 10000
-#define STACK_DEPTH_BRIGHTNESS_TASK 10000
+// This stack depth is specified in words, i believe 1 word = 4 bytes on the ESP32
+// use Util.printHighWaterMarkForTask() to troubleshoot
+#define STACK_DEPTH_TRIPS_TASK 8000                   // Remaining stack ~2k words
+#define STACK_DEPTH_WEATHER_TASK 8000                 // Remaining stack ~2k words
+#define STACK_DEPTH_TRACKING_BUS_INDICATORS_TASK 1100 // Remaining stack ~500 words
+#define STACK_DEPTH_EXTRA_WEATHER_DATA_TASK 1500      // Remaining stack ~500 words
+#define STACK_DEPTH_BRIGHTNESS_TASK 700               // Remaining stack ~200 words
+#define STACK_DEPTH_SLEEPING_ANIMATION_TASK 800       // Remaining stack ~200 words
 
 // Colors
 #define COLOR_TEXT_PRIMARY_R 191

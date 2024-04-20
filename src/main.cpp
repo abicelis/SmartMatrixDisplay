@@ -10,8 +10,8 @@
 #include <OCTranspoAPI.h>
 #include <MatrixDisplay.h>
 #include <OpenMeteoAPI.h>
+#include <Util.h>
 
-#include "util.h"
 
 WiFiClientSecure wifiClient;
 HTTPClient httpClient;
@@ -35,7 +35,7 @@ RouteGroupData routeGroupData;
 WeatherData weatherData;
 
 void FetchRoutes(void *pvParameters) {
-    Serial.println("FetchRoutes task started..");
+    Serial.println("FetchRoutes task started");
     routeGroupData = octranspoAPI.fetchRouteGroup(appPageToRouteGroupType(appPage));
 
     if(routeGroupData.routeDestinations.size() == 0) {
@@ -52,11 +52,13 @@ void FetchRoutes(void *pvParameters) {
 
     if(firstPage)
         nextCheckMillis = currentMillis; //Force check now
+    Serial.println("FetchRoutes task finished");
+    printHighWaterMarkForTask(taskHandle);
     vTaskDelete(NULL);
 }
 
 void FetchWeather(void *pvParameters) {
-    Serial.println("FetchWeather task started..");
+    Serial.println("FetchWeather task started");
     weatherData = openMeteoAPI.fetchCurrentWeather(currentHourOfDay());
     appState = NextPageLoaded;
 
@@ -71,6 +73,8 @@ void FetchWeather(void *pvParameters) {
 
     if(firstPage)
         nextCheckMillis = currentMillis; //Force check now
+    Serial.println("FetchWeather task finished");
+    printHighWaterMarkForTask(taskHandle);
     vTaskDelete(NULL);
 }
 
@@ -169,13 +173,6 @@ void loop() {
         if(appState == Initializing) {
             checkAppStateAndContinueFromThere();
         } else if(appState == NextPageLoaded) {
-            
-            #ifdef DEBUG
-            UBaseType_t uxHighWaterMark = uxTaskGetStackHighWaterMark(taskHandle);
-            Serial.print( appPage == WeatherPage ? "FetchWeather" : "FetchRoutes");
-            Serial.println(" task used this memory: " + String(uxHighWaterMark));
-            #endif
-
             char currentTime[6];
             currentHourMinute(currentTime, sizeof(currentTime));
             char currentDate[20];
@@ -216,14 +213,13 @@ void checkAppStateAndContinueFromThere() {
     updateAppState(appState, appPage);
     Serial.println("AppState changed to '" + String(appState) + "'");
     if(appState == NextPageLoading) {
-        Serial.println("Fetching AppPage '" + String(appPage) + "'");
-        Serial.print(">>>> AVAILABLE HEAP MEMORY = ");
-        Serial.println(xPortGetFreeHeapSize());
+        // Serial.println("Fetching AppPage '" + String(appPage) + "'");
+        printAvailableHeapMemory();
 
         if(appPage != WeatherPage) {
             BaseType_t result = xTaskCreatePinnedToCore(FetchRoutes, "FetchRoutes", STACK_DEPTH_TRIPS_TASK, NULL, 1, &taskHandle, 0);
             if(result == pdPASS) {
-                Serial.println("FetchRoutes task launched successfully!");
+                Serial.println("FetchRoutes task launched");
                 nextCheckMillis = currentMillis + INTERVAL_PAGE_LIFETIME;
             } else if(result == errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY) {
                 Serial.print("ERROR: Task creation failed due to insufficient memory! HEAP MEM=");
@@ -234,7 +230,7 @@ void checkAppStateAndContinueFromThere() {
         } else {
             BaseType_t result = xTaskCreatePinnedToCore(FetchWeather, "FetchWeather", STACK_DEPTH_WEATHER_TASK, NULL, 1, &taskHandle, 0);
             if(result == pdPASS) {
-                Serial.println("FetchWeather task launched successfully!");
+                Serial.println("FetchWeather task launched");
                 nextCheckMillis = currentMillis + INTERVAL_PAGE_LIFETIME;
             } else if(result == errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY) {
                 Serial.print("ERROR: Task creation failed due to insufficient memory! HEAP MEM=");
