@@ -5434,19 +5434,35 @@ const char PROGMEM IMG_a42[] = {
 
 inline const char* weatherTypeToImage(WeatherType weatherType, bool daytime) {
     switch (weatherType) {
-        case Clear: 		if(daytime) return IMG_a01; else return IMG_a08;
-        case Cloudy: 		if(daytime) return IMG_a03; else return IMG_a10;
-        case Drizzle: 		return IMG_a20;
-        case Showers: 		return IMG_a20;
-        case Rain: 			return IMG_a12;
-        case FreezingRain: 	return IMG_a14;
-        case Snow: 			return IMG_a13;
-        case Thunderstorm: 	return IMG_a26;
-        // case Fog: return "Fog";
-        case Hail: return IMG_a31;
-        // case Mist: return "Mist";
-        // case SmokeOrHaze: return "Smoke";
-        // case Invalid: return "Invalid";
-        default: return IMG_a35;
+        case Clear: 		  			if(daytime) return IMG_a01; else return IMG_a08;
+        case MainlyClear:	  			if(daytime) return IMG_a03; else return IMG_a09;
+		case PartlyCloudy: 	  			if(daytime) return IMG_a03; else return IMG_a10;
+		case Overcast:		  			return IMG_a19;
+		case Fog:			  			return IMG_a16;
+
+        case Drizzle: 		  			return IMG_a20;
+		case FreezingDrizzle: 			return IMG_a31;
+
+		case SlightRain: 				return IMG_a22;
+		case ModerateRain: 				return IMG_a23;
+		case HeavyRain: 				return IMG_a24;
+
+        case LightFreezingRain:			return IMG_a11;
+        case HeavyFreezingRain:			return IMG_a11;
+
+		case LightSnow: 				return IMG_a33;		// All three are the same for now
+		case ModerateSnow: 				return IMG_a33;
+		case HeavySnow: 				return IMG_a33;
+		case SnowGrains: 				return IMG_a33;
+
+		case SlightRainShowers: 		return IMG_a21;		// All three are the same for now
+		case ModerateRainShowers: 		return IMG_a21;
+		case ViolentRainShowers: 		return IMG_a21;
+
+		case SlightSnowShowers: 		return IMG_a34;
+		case HeavySnowShowers: 			return IMG_a34;
+        case Thunderstorm: 	  			return IMG_a35;
+
+		case Unknown: 	  return NULL;
     }
 }

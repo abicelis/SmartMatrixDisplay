@@ -41,7 +41,12 @@ WeatherData OpenMeteoAPI::fetchCurrentWeather(const uint8_t clockHour) {
             time_t currentTimestamp = iso8601DateStringToUnixTimestamp(doc["hourly"]["time"][currentHour]);
             result.isDaytime.push_back(currentTimestamp >= sunriseTimestamp && currentTimestamp <= sunsetTimestamp);
 
-            result.weatherType.push_back(WMOCodeToWeatherType(doc["hourly"]["weather_code"][currentHour].as<int>()));
+            WeatherType type = WMOCodeToWeatherType(doc["hourly"]["weather_code"][currentHour].as<int>());
+            if(type == Unknown) {
+                Serial.print("Warning: WMOCodeToWeatherType returned 'Unknown for code");
+                Serial.println(doc["hourly"]["weather_code"][currentHour].as<int>());
+            }
+            result.weatherType.push_back(type);
             result.temperatureCelcius.push_back(String(doc["hourly"]["temperature_2m"][currentHour].as<int>()) + String("°"));
             result.apparentTemperatureCelcius.push_back(String(doc["hourly"]["apparent_temperature"][currentHour].as<int>()) + String("°"));
             result.relativeHumidity.push_back(String(doc["hourly"]["relative_humidity_2m"][currentHour].as<int>()) + String("%"));
@@ -54,36 +59,64 @@ WeatherData OpenMeteoAPI::fetchCurrentWeather(const uint8_t clockHour) {
 }
 
 
-// Mappings: https://www.nodc.noaa.gov/archive/arc0021/0002199/1.1/data/0-data/HTML/WMO-CODE/WMO4677.HTM
+// Mappings based on https://open-meteo.com/en/docs/ (scroll way down)
+// And https://www.nodc.noaa.gov/archive/arc0021/0002199/1.1/data/0-data/HTML/WMO-CODE/WMO4677.HTM
 WeatherType OpenMeteoAPI::WMOCodeToWeatherType(uint8_t c) {
-    Serial.print("WMOCodeToWeatherType called with code ");
-    Serial.println(c);
-    if(c == 0 || c == 1) { 
+    // Serial.print("WMOCodeToWeatherType called with code ");
+    // Serial.println(c);
+    if(c == 0) { 
         return Clear;
-    } else if (c == 2 || c == 3 || c == 4) {  // 2 means actually "unchanged"... But we'll assume Cloudy.
-        return Cloudy;
-    } else if (c == 20 || (c >= 50 && c <= 55)) {
-        return Drizzle;
-    } else if (c == 25 || c == 80 || c == 81 || c == 82) {
-        return Showers;
-    } else if (c == 21 || (c >= 60 && c <= 65)) {
-        return Rain;
-    } else if (c == 24 || c == 66 || c == 67) {
-        return FreezingRain;
-    } else if (c == 22 || c == 23 || (c >= 70 && c <= 75)) {
-        return Snow;
-    } else if (c >= 95 && c <= 99) {
-        return Thunderstorm;
-    } else if (c >= 40 && c <= 49) {
+    } else if (c == 1) {
+        return MainlyClear;
+    } else if (c == 2) {
+        return PartlyCloudy;
+    } else if (c == 3 ) {
+        return Overcast;
+    } else if (c == 45 || c == 48) {
         return Fog;
-    } else if (c == 24 || (c >= 87 && c <= 90)) {
-        return Hail;
-    } else if (c == 10) {
-        return Mist;
-    } else if (c == 4 || c == 5) {
-        return SmokeOrHaze;
-    }
-    return Invalid;
+    
+    } else if (c == 51 || c == 53 || c == 55) {
+        return Drizzle;
+    } else if (c == 56 || c == 57) {
+        return FreezingDrizzle;
+    
+    } else if (c == 61) {
+        return SlightRain;
+    } else if (c == 63) {
+        return ModerateRain;
+    } else if (c == 65) {
+        return HeavyRain;
+
+    } else if (c == 66) {
+        return LightFreezingRain;
+    } else if (c == 67) {
+        return HeavyFreezingRain;
+
+    } else if (c == 71) {
+        return LightSnow;
+    } else if (c == 73) {
+        return ModerateSnow;
+    } else if (c == 75) {
+        return HeavySnow;
+    } else if (c == 77) {
+        return SnowGrains;
+
+    } else if (c == 80) {
+        return SlightRainShowers;
+    } else if (c == 81) {
+        return ModerateRainShowers;
+    } else if (c == 82) {
+        return ViolentRainShowers;
+                   
+    } else if (c == 85) {
+        return SlightSnowShowers;
+    } else if (c == 86) {
+        return HeavySnowShowers;
+
+    } else if (c == 96) {
+        return Thunderstorm;
+    } 
+    return Unknown;
 }
 
 String OpenMeteoAPI::UVIndexCodeToString(uint8_t index) {

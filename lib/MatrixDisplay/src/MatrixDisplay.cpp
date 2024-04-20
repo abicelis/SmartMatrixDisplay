@@ -26,29 +26,6 @@ void MatrixDisplay::begin(int8_t r1_pin, int8_t g1_pin, int8_t b1_pin, int8_t r2
     _dma_display->fillScreen(_colorBlack);
 
 
-
-    // float t = 0;
-    // float brightness = 0.5;
-
-    // while(true) {
-    //     for (int x = 12; x < 116; ++x) {
-    //         for (int y = 12; y < 52; ++y) {
-    //             auto xy = x / 30.0f - y / 30.0f;
-    //             auto mpy = M_PI * 2 / 3;
-    //             auto r = brightness * (sinf(xy + t) * 120 + 120);
-    //             auto g = brightness * (sinf(xy + mpy + t) * 120 + 120);
-    //             auto b = brightness * (sinf(xy + mpy * 2 + t) * 120 + 120);
-    //             _dma_display->drawPixelRGB888(x, y, r, g, b);
-    //         }
-    //     }
-
-    //     delay(30);
-    //     t += 0.005;
-    //     if(t > M_PI * 2)
-    //         t=0;
-    // }
-
-
     xTaskCreatePinnedToCore(BrightnessTaskFunction, "BrightnessTaskFunction", 
         1024, this, 1, &brightnessTaskHandle, 1);
 }
@@ -163,7 +140,18 @@ void MatrixDisplay::drawWeatherPage(WeatherData& weatherData, const char* curren
     uint8_t xPos = 16;
     for (size_t i = 0; i < weatherData.times.size(); ++i) {
         drawCenteredText(xPos, WEATHER_PAGE_TIME_POS_Y, weatherData.times.at(i).c_str(), _colorTextPrimary, &Font5x5Fixed);
-        drawASCWWImage(xPos-12, WEATHER_PAGE_WEATHER_ICON_POS_Y, 25, 25, weatherTypeToImage(weatherData.weatherType.at(i), weatherData.isDaytime.at(i)));
+        const char* weatherImage = weatherTypeToImage(weatherData.weatherType.at(i), weatherData.isDaytime.at(i));
+
+        if(weatherImage != NULL)
+            drawASCWWImage(xPos-12, WEATHER_PAGE_WEATHER_ICON_POS_Y, 25, 25, weatherImage);
+        else {
+            drawCenteredText(xPos, WEATHER_PAGE_TIME_POS_Y + 10, "ERR", _colorTextSecondary, &Font5x5Fixed);
+            Serial.print("Warning: weatherTypeToImage() returned NULL for weatherType= ");
+            Serial.print(weatherData.weatherType.at(i));
+            Serial.print(" daytime=");
+            Serial.println(weatherData.weatherType.at(i));
+        }
+
         xPos=xPos+32;
     }
     fadeInScreen();
@@ -260,6 +248,32 @@ void MatrixDisplay::clearScreen() {
         sleepingAnimationTaskHandle = nullptr;
     }
     _dma_display->clearScreen();
+}
+
+
+void MatrixDisplay::drawRainbow() {
+    clearScreen();
+
+    float t = 0;
+    float brightness = 0.5;
+
+    while(true) {
+        for (int x = 12; x < 116; ++x) {
+            for (int y = 12; y < 52; ++y) {
+                auto xy = x / 30.0f - y / 30.0f;
+                auto mpy = M_PI * 2 / 3;
+                auto r = brightness * (sinf(xy + t) * 120 + 120);
+                auto g = brightness * (sinf(xy + mpy + t) * 120 + 120);
+                auto b = brightness * (sinf(xy + mpy * 2 + t) * 120 + 120);
+                _dma_display->drawPixelRGB888(x, y, r, g, b);
+            }
+        }
+
+        delay(30);
+        t += 0.005;
+        if(t > M_PI * 2)
+            t=0;
+    }
 }
 
 
