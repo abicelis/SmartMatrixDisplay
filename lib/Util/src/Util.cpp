@@ -46,7 +46,8 @@ void printTrips(const RouteGroupData& data) {
 
         for(const auto &trip: destination.trips) {
             String estimated = trip.arrivalIsEstimated ? "*" : "";
-            Serial.print(estimated + String(trip.arrivalTime) + "min, ");
+            String farAwayEnough = trip.busLocation == FarAwayEnough ? "!" : "";
+            Serial.print(farAwayEnough + estimated + String(trip.arrivalTime) + "min, ");
         }
         Serial.println("");
     }

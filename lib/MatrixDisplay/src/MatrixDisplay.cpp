@@ -42,6 +42,91 @@ void MatrixDisplay::drawInitializationPage(uint8_t loadingBarWidthPixels) {
     INITIALIZATION_PAGE_BAR_THICKNESS_PX, INITIALIZATION_PAGE_BAR_CORNER_RADIUS_PX, _colorTextPrimary);
 }
 
+void MatrixDisplay::drawVickyCommutePage(RouteGroupData& data, const char* currentTime) {
+    fadeOutScreen();
+    clearScreen();
+
+    //Draw icon
+    // _dma_display->drawBitmap(SCHEDULE_BUS_X_POSITION, SCHEDULE_BUS_Y_POSITION, icon_Bus, 7, 9, _colorTextPrimary);
+    _dma_display->drawRGBBitmap(SCHEDULE_ICON_X_POSITION, SCHEDULE_ICON_Y_POSITION, icon_OCTranspoLogo, 9, 9);
+
+    // Draw Title
+    const char* title = "Vicky";
+    drawText(SCHEDULE_TITLE_X_POSITION, SCHEDULE_TITLE_Y_POSITION, title);        
+    _dma_display->setCursor(_dma_display->getCursorX()+2, _dma_display->getCursorY()-1);
+    _dma_display->setFont(); // Use default font
+    _dma_display->write(0x03);
+
+    // Draw clock
+    drawTextEnd(PAGE_CLOCK_X_POSITION, PAGE_CLOCK_Y_POSITION, currentTime, _colorTextPrimary, &Font5x7Fixed);
+
+    // Draw Horizontal rule
+    _dma_display->drawFastHLine(PAGE_HORIZONTAL_MARGIN_PX, PAGE_TOP_HEADER_SIZE_PX-4,
+        PANEL_RES_X - PAGE_HORIZONTAL_MARGIN_PX*2, _colorTextSecondary);
+
+    uint8_t signWidth = SCHEDULE_BUS_SIGN_WIDTH_PX;
+    uint8_t row = PAGE_TOP_HEADER_SIZE_PX+8;
+
+    _trackingBusIndicatorPositions.clear();
+
+    for(uint8_t i = 0; i < data.routeDestinations.size() && i < SCHEDULE_MAX_ROUTES ; i++) {  
+        const auto &destination = data.routeDestinations[i]; 
+
+        // Draw LTR. RouteNumber, then RouteLabel
+        drawRouteSign(destination.routeType, PAGE_HORIZONTAL_MARGIN_PX, row-8, SCHEDULE_BUS_SIGN_WIDTH_PX, destination.routeNumber.c_str());
+        drawText(PAGE_HORIZONTAL_MARGIN_PX + SCHEDULE_BUS_SIGN_WIDTH_PX + SCHEDULE_BUS_SIGN_AND_BUS_LABEL_MARGIN_PX, row, shortenRouteDestination(destination.routeDestination).c_str());
+
+        // Foreach trip: 
+        uint8_t xPos = PANEL_RES_X - 1 - PAGE_HORIZONTAL_MARGIN_PX;
+        int8_t j = SCHEDULE_VICKY_COMMUTE_MAX_TRIPS - 1;
+        if(destination.trips.size() < j+1)
+            j = destination.trips.size() - 1;
+
+        while(j >= 0) {  
+            const auto &trip = destination.trips[j];
+
+            //Draw RTL. MinuteSymbol, then ArrivalTime
+            drawMinuteSymbol(xPos, row-7);
+            String arrivalStr = String(trip.arrivalTime);
+            const char* arrivalCStr = arrivalStr.c_str();
+            uint8_t arrivalEndXPos = xPos - SCHEDULE_BUS_MINUTE_SYMBOL_AND_ARRIVAL_TIME_MARGIN_PX;
+            uint8_t arrivalStartXPos = getRightAlignStartingPoint(arrivalCStr, arrivalEndXPos);
+            drawText(arrivalStartXPos, row, arrivalCStr);
+
+            if(trip.busLocation == FarAwayEnough) {
+                // _dma_display->drawPixel(arrivalStartXPos-5, row-2, _colorGreen);
+                // _dma_display->drawPixel(arrivalStartXPos-4, row-1, _colorGreen);
+                // _dma_display->drawPixel(arrivalStartXPos-3, row-2, _colorGreen);
+                // _dma_display->drawPixel(arrivalStartXPos-2, row-3, _colorGreen);
+
+                _dma_display->drawFastVLine(arrivalStartXPos-4, row-5, 5, _colorGreen);
+                _dma_display->drawFastVLine(arrivalStartXPos-3, row-4, 3, _colorGreen);
+                _dma_display->drawPixel(    arrivalStartXPos-2, row-3, _colorGreen);
+            } else {
+                // _dma_display->drawLine(arrivalStartXPos-4, row-3, arrivalStartXPos-2, row-1, _colorRed);
+                // _dma_display->drawLine(arrivalStartXPos-4, row-1, arrivalStartXPos-2, row-3, _colorRed);
+                _dma_display->fillRect(arrivalStartXPos-4, row-4, 3, 3, _colorRed);
+            }
+
+            if(trip.arrivalIsEstimated) {
+                uint8_t trackingIndicatorXPos = arrivalStartXPos - SCHEDULE_BUS_ARRIVAL_TIME_AND_TRACKING_INDICATOR_MARGIN_PX;
+                _trackingBusIndicatorPositions.push_back(std::make_pair(trackingIndicatorXPos, row-7));
+            }
+
+            xPos -= SCHEDULE_VICKY_COMMUTE_BETWEEN_TRIPS_SPACING_PX;
+            j--;
+        }
+        row = row + SCHEDULE_VERTICAL_SPACING_BETWEEN_BUSES_PX;
+    }
+    fadeInScreen();
+
+    if(_trackingBusIndicatorPositions.size() > 0) {
+        xTaskCreatePinnedToCore(TrackingBusIndicatorTaskFunction, "TrackingBusIndicatorTask", 
+            STACK_DEPTH_TRACKING_BUS_INDICATORS_TASK, this, 1, &trackingBusIndicatorTaskHandle, 1);
+        // Serial.println("TrackingBusIndicatorTask LAUNCHED");
+    }
+}
+
 void MatrixDisplay::drawBusSchedulePage(RouteGroupData& data, RouteGroupType tripsType, const char* currentTime) {
     fadeOutScreen();
     clearScreen();
@@ -165,6 +250,7 @@ void MatrixDisplay::drawWeatherPage(WeatherData& weatherData, const char* curren
 
 void MatrixDisplay::drawSleepingPage() {
     clearScreen();
+
     xTaskCreatePinnedToCore(SleepingAnimationTaskFunction, "SleepingAnimationTaskFunction",
         STACK_DEPTH_SLEEPING_ANIMATION_TASK, this, 1, &sleepingAnimationTaskHandle, 1);
     xTaskCreatePinnedToCore(SleepingAnimationTaskFunction2, "SleepingAnimationTaskFunction2",
@@ -266,8 +352,8 @@ void MatrixDisplay::TrackingBusIndicatorTaskFunction(void *pvParameters) {
     for(;;) {
         brightness = 0;
         while(brightness < brightnessSteps) {
-            uint16_t color = colorWithIntensity(dma_display, COLOR_RED_LIVE_R, 
-                                COLOR_RED_LIVE_G, COLOR_RED_LIVE_B, (float)brightness/brightnessSteps);
+            uint16_t color = colorWithIntensity(dma_display, COLOR_LIVE_R, 
+                                COLOR_LIVE_G, COLOR_LIVE_B, (float)brightness/brightnessSteps);
             for (const auto &value : indicatorPositions)
                 dma_display->drawPixel(value.first, value.second, color);
             brightness=brightness+1;
@@ -276,8 +362,8 @@ void MatrixDisplay::TrackingBusIndicatorTaskFunction(void *pvParameters) {
         vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_TIME_BETWEEN_PHASE_MS));
         brightness = 0;
         while(brightness < brightnessSteps) {
-            uint16_t color = colorWithIntensity(dma_display, COLOR_RED_LIVE_R, 
-                                COLOR_RED_LIVE_G, COLOR_RED_LIVE_B, (float)brightness/brightnessSteps);
+            uint16_t color = colorWithIntensity(dma_display, COLOR_LIVE_R, 
+                                COLOR_LIVE_G, COLOR_LIVE_B, (float)brightness/brightnessSteps);
             for (const auto &value : indicatorPositions) {
                 dma_display->drawFastVLine(value.first-2, value.second-1, 2, color);
                 dma_display->drawFastHLine(value.first-1, value.second-2, 2, color);
@@ -288,8 +374,8 @@ void MatrixDisplay::TrackingBusIndicatorTaskFunction(void *pvParameters) {
         vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_TIME_AFTER_ANIMATION_FULL_MS));
         brightness = brightnessSteps;
         while(brightness >= 0) {
-            uint16_t color = colorWithIntensity(dma_display, COLOR_RED_LIVE_R, 
-                                COLOR_RED_LIVE_G, COLOR_RED_LIVE_B, (float)brightness/brightnessSteps);
+            uint16_t color = colorWithIntensity(dma_display, COLOR_LIVE_R, 
+                                COLOR_LIVE_G, COLOR_LIVE_B, (float)brightness/brightnessSteps);
             for (const auto &value : indicatorPositions) {
                 dma_display->drawPixel(value.first, value.second, color);
                 dma_display->drawFastVLine(value.first-2, value.second-1, 2, color);

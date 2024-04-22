@@ -179,9 +179,12 @@ void loop() {
             currentDateShort(currentDate, sizeof(currentDate));
             if(appPage == WeatherPage)
                 display.drawWeatherPage(weatherData, currentTime, currentDate);
-            else
-                display.drawBusSchedulePage(routeGroupData, appPageToRouteGroupType(appPage), currentTime);
-
+            else {
+                if(appPage == VickyCommutePage)
+                    display.drawVickyCommutePage(routeGroupData, currentTime);
+                else
+                    display.drawBusSchedulePage(routeGroupData, appPageToRouteGroupType(appPage), currentTime);
+            }
             firstPage = false;
             loadingRecheckAttempt = 0;
             pageChangedMillis = currentMillis;

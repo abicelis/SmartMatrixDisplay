@@ -24,6 +24,7 @@ class MatrixDisplay {
                int8_t panel_chain);
 
         void drawInitializationPage(uint8_t loadingBarWidthPixels);
+        void drawVickyCommutePage(RouteGroupData& data, const char* currentTime);
         void drawBusSchedulePage(RouteGroupData& data, RouteGroupType tripsType, const char* currentTime);
         void drawWeatherPage(WeatherData& weatherData, const char* currentTime, const char* currentDateShort);
         void drawSleepingPage();
@@ -37,6 +38,8 @@ class MatrixDisplay {
         MatrixPanel_I2S_DMA *_dma_display = nullptr;
         uint16_t _colorBlack = _dma_display->color565(0, 0, 0);
         uint16_t _colorWhite = _dma_display->color565(255, 255, 255);
+        uint16_t _colorRed = _dma_display->color565(COLOR_RED_R, COLOR_RED_G, COLOR_RED_B);
+        uint16_t _colorGreen = _dma_display->color565(COLOR_GREEN_R, COLOR_GREEN_G, COLOR_GREEN_B);
         uint16_t _colorTextPrimary = _dma_display->color565(COLOR_TEXT_PRIMARY_R, COLOR_TEXT_PRIMARY_G, COLOR_TEXT_PRIMARY_B);
         uint16_t _colorTextSecondary = _dma_display->color565(COLOR_TEXT_SECONDARY_R, COLOR_TEXT_SECONDARY_G, COLOR_TEXT_SECONDARY_B);
         uint16_t _colorTextRoute = _dma_display->color565(COLOR_TEXT_ROUTE_R, COLOR_TEXT_ROUTE_G, COLOR_TEXT_ROUTE_B);

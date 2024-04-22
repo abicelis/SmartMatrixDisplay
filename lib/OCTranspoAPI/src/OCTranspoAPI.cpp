@@ -68,8 +68,15 @@ void OCTranspoAPI::fetchTripsFor(RouteGroupData& data, const String& stopNo, con
             }
             arrivalTime -= OCTRANSPO_API_MINUTES_TO_SUBTRACT_FROM_ARRIVAL_TIME;
             String routeDestination = trip["TripDestination"];
-            float adjustmentAge = trip["AdjustmentAge"].as<float>();
-            addTrip(data, routeNumber, routeDestination, arrivalTime, adjustmentAge != -1);
+            bool arrivalIsEstimated = trip["AdjustmentAge"].as<float>() != -1;
+            BusLocation busLocation = None;
+            if(routeNo == "88" && stopNo == "4483" && arrivalIsEstimated) {
+                busLocation = TooClose;
+                if(trip["Longitude"].as<float>() < OCTRANSPO_API_88_HURDMAN_LONGITUDE_THRESHOLD_BUS_FAR_ENOUGH_AWAY)
+                    busLocation = FarAwayEnough;
+            }
+            
+            addTrip(data, routeNumber, routeDestination, arrivalTime, arrivalIsEstimated, busLocation);
         }
     }
 
@@ -80,17 +87,17 @@ void OCTranspoAPI::fetchTripsFor(RouteGroupData& data, const String& stopNo, con
     #endif
 }
 
-void OCTranspoAPI::addTrip(RouteGroupData& data, String& routeNumber, String& routeDestination, uint8_t arrivalTime, bool arrivalIsEstimated) {
+void OCTranspoAPI::addTrip(RouteGroupData& data, String& routeNumber, String& routeDestination, uint8_t arrivalTime, bool arrivalIsEstimated, BusLocation busLocation) {
     bool inserted = false;
     for (auto &destination : data.routeDestinations) {
         if(destination.routeNumber == routeNumber && destination.routeDestination == routeDestination) {
             inserted = true;
-            destination.trips.push_back(Trip(arrivalTime, arrivalIsEstimated));
+            destination.trips.push_back(Trip(arrivalTime, arrivalIsEstimated, busLocation));
         }
     }
     if(inserted == false) {
         RouteDestination destination(routeNumber, routeDestination, getRouteType(routeNumber));
-        destination.trips.push_back(Trip(arrivalTime, arrivalIsEstimated));
+        destination.trips.push_back(Trip(arrivalTime, arrivalIsEstimated, busLocation));
         data.routeDestinations.push_back(destination);
     }
 }
