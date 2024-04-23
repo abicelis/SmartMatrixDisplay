@@ -24,7 +24,7 @@ class MatrixDisplay {
                int8_t panel_chain);
 
         void drawInitializationPage(uint8_t loadingBarWidthPixels);
-        void drawVickyCommutePage(RouteGroupData& data, const char* currentTime);
+        void drawVickyCommutePage(RouteGroupData& data, WeatherData& weatherData, const char* currentTime);
         void drawBusSchedulePage(RouteGroupData& data, RouteGroupType tripsType, const char* currentTime);
         void drawWeatherPage(WeatherData& weatherData, const char* currentTime, const char* currentDateShort);
         void drawSleepingPage();
@@ -46,7 +46,7 @@ class MatrixDisplay {
         uint16_t _colorRouteFrequent = _dma_display->color565(COLOR_ROUTE_FREQUENT_R, COLOR_ROUTE_FREQUENT_G, COLOR_ROUTE_FREQUENT_B);
         uint16_t _colorRouteLocal = _dma_display->color565(COLOR_ROUTE_LOCAL_R, COLOR_ROUTE_LOCAL_G, COLOR_ROUTE_LOCAL_B);
 
-        std::vector<std::pair<uint8_t, uint8_t>> _trackingBusIndicatorPositions;
+        std::vector<std::tuple<uint8_t, uint8_t, bool>> _trackingBusIndicatorPositions;
         TaskHandle_t trackingBusIndicatorTaskHandle = NULL;
         static void TrackingBusIndicatorTaskFunction(void *pvParameters);
 

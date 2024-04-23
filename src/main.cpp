@@ -51,7 +51,7 @@ void FetchRoutes(void *pvParameters) {
     }
 
     if(firstPage)
-        nextCheckMillis = currentMillis; //Force check now
+        nextCheckMillis = currentMillis; // Force check now
     Serial.println("FetchRoutes task finished");
     printHighWaterMarkForTask(taskHandle);
     vTaskDelete(NULL);
@@ -59,8 +59,7 @@ void FetchRoutes(void *pvParameters) {
 
 void FetchWeather(void *pvParameters) {
     Serial.println("FetchWeather task started");
-    weatherData = openMeteoAPI.fetchCurrentWeather(currentHourOfDay());
-    appState = NextPageLoaded;
+    weatherData = openMeteoAPI.fetchCurrentWeather(currentHourOfDay(), false);
 
     if(!weatherData.setCorrectly) {
         #ifdef DEBUG
@@ -72,10 +71,102 @@ void FetchWeather(void *pvParameters) {
     }
 
     if(firstPage)
-        nextCheckMillis = currentMillis; //Force check now
+        nextCheckMillis = currentMillis; // Force check now
     Serial.println("FetchWeather task finished");
     printHighWaterMarkForTask(taskHandle);
     vTaskDelete(NULL);
+}
+
+void FetchCommute(void *pvParameters) {
+    Serial.println("FetchCommute task started");
+
+    routeGroupData = octranspoAPI.fetchRouteGroup(VickyCommute);
+    uint8_t currentHour = currentHourOfDay();
+    if(weatherData.times.size() == 0 || 
+            weatherData.setCorrectly == false ||
+            weatherData.times.size() != 2 ||
+            currentHour != weatherData.times[0]) {
+        // Re-fetch weather data
+        weatherData = openMeteoAPI.fetchCurrentWeather(currentHour, true);
+
+    }
+    appState = NextPageLoaded;
+    
+    if(!weatherData.setCorrectly) {
+        Serial.println("Warning: FetchWeather task returned no data!");
+        appState = NextPageErrorLoading;
+    }
+
+    if(routeGroupData.routeDestinations.size() == 0) {
+        Serial.println("Warning: FetchRoutes task returned no trips!");
+        appState = NextPageErrorLoading;
+    } else {
+        printTrips(routeGroupData);
+    }
+
+    if(firstPage)
+        nextCheckMillis = currentMillis; // Force check now
+    Serial.println("FetchCommute task finished");
+    printHighWaterMarkForTask(taskHandle);
+    vTaskDelete(NULL);
+}
+
+void checkAppStateAndContinueFromThere() {
+    updateAppState(appState, appPage);
+    if(appState == NextPageLoading) {
+        // Serial.println("Fetching AppPage '" + String(appPage) + "'");
+        printAvailableHeapMemory();
+
+        if(appPage == VickyCommutePage) {
+            BaseType_t result = xTaskCreatePinnedToCore(FetchCommute, "FetchCommute", STACK_DEPTH_FETCH_COMMUTE_TASK, NULL, 1, &taskHandle, 0);
+            if(result == pdPASS) {
+                Serial.println("FetchCommute task launched");
+                nextCheckMillis = currentMillis + INTERVAL_PAGE_LIFETIME;
+            } else if(result == errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY) {
+                Serial.print("ERROR: Task creation failed due to insufficient memory! HEAP MEM=");
+                Serial.println(xPortGetFreeHeapSize());
+            } else {
+                Serial.print("ERROR: Task creation failed!!!");
+            }
+        } else if(appPage == NorthSouthPage || appPage == EastWestPage) {
+            BaseType_t result = xTaskCreatePinnedToCore(FetchRoutes, "FetchRoutes", STACK_DEPTH_FETCH_ROUTES_TASK, NULL, 1, &taskHandle, 0);
+            if(result == pdPASS) {
+                Serial.println("FetchRoutes task launched");
+                nextCheckMillis = currentMillis + INTERVAL_PAGE_LIFETIME;
+            } else if(result == errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY) {
+                Serial.print("ERROR: Task creation failed due to insufficient memory! HEAP MEM=");
+                Serial.println(xPortGetFreeHeapSize());
+            } else {
+                Serial.print("ERROR: Task creation failed!!!");
+            }
+        } else { // WeatherPage
+            BaseType_t result = xTaskCreatePinnedToCore(FetchWeather, "FetchWeather", STACK_DEPTH_FETCH_WEATHER_TASK, NULL, 1, &taskHandle, 0);
+            if(result == pdPASS) {
+                Serial.println("FetchWeather task launched");
+                nextCheckMillis = currentMillis + INTERVAL_PAGE_LIFETIME;
+            } else if(result == errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY) {
+                Serial.print("ERROR: Task creation failed due to insufficient memory! HEAP MEM=");
+                Serial.println(xPortGetFreeHeapSize());
+            } else {
+                Serial.print("ERROR: Task creation failed!!!");
+            }
+        }
+    } else if(appState == Sleeping) {
+        Serial.println("Sleeping now");
+        display.drawSleepingPage();
+        nextCheckMillis = currentMillis + 3600000; // 1 hour
+    } else if(appState == DeepSleeping) {
+        Serial.println("DEEP Sleeping now");
+        display.clearScreen();
+
+        // TODO Stay in this state for WAY longer, 
+        // TODO But make sure to set nextCheckMillis so that we immediately wake up when we need to
+        // At APPSTATE_DEEP_SLEEPING_HOUR_END
+        // For now, we sleep for INTERVAL_PAGE_LIFETIME then re-check and re-check... 
+        // also consider shutting down wifi and other things in this state..?
+        nextCheckMillis = currentMillis + INTERVAL_PAGE_LIFETIME;
+    }
+
 }
 
 void setup() {
@@ -143,7 +234,6 @@ void setup() {
     nextCheckMillis = currentMillis;
 }
 
-void checkAppStateAndContinueFromThere();
 void loop() {
     if(currentMillis - previousLightSensorUpdateMillis >= INTERVAL_UPDATE_LIGHT_SENSOR) {
         uint16_t newSample = analogRead(A0);
@@ -181,7 +271,7 @@ void loop() {
                 display.drawWeatherPage(weatherData, currentTime, currentDate);
             else {
                 if(appPage == VickyCommutePage)
-                    display.drawVickyCommutePage(routeGroupData, currentTime);
+                    display.drawVickyCommutePage(routeGroupData, weatherData, currentTime);
                 else
                     display.drawBusSchedulePage(routeGroupData, appPageToRouteGroupType(appPage), currentTime);
             }
@@ -189,7 +279,6 @@ void loop() {
             loadingRecheckAttempt = 0;
             pageChangedMillis = currentMillis;
             checkAppStateAndContinueFromThere();
-
         } else if (appState == NextPageLoading) {
             // TODO, eventually either kill the task, or reset the ESP32 if we're stuck here.
             loadingRecheckAttempt++;
@@ -210,51 +299,4 @@ void loop() {
         
     delay(10);                // Healthy sleep
     currentMillis = millis(); // Refresh for next loop
-}
-
-void checkAppStateAndContinueFromThere() {
-    updateAppState(appState, appPage);
-    if(appState == NextPageLoading) {
-        // Serial.println("Fetching AppPage '" + String(appPage) + "'");
-        printAvailableHeapMemory();
-
-        if(appPage != WeatherPage) {
-            BaseType_t result = xTaskCreatePinnedToCore(FetchRoutes, "FetchRoutes", STACK_DEPTH_ROUTES_TASK, NULL, 1, &taskHandle, 0);
-            if(result == pdPASS) {
-                Serial.println("FetchRoutes task launched");
-                nextCheckMillis = currentMillis + INTERVAL_PAGE_LIFETIME;
-            } else if(result == errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY) {
-                Serial.print("ERROR: Task creation failed due to insufficient memory! HEAP MEM=");
-                Serial.println(xPortGetFreeHeapSize());
-            } else {
-                Serial.print("ERROR: Task creation failed!!!");
-            }
-        } else {
-            BaseType_t result = xTaskCreatePinnedToCore(FetchWeather, "FetchWeather", STACK_DEPTH_FETCH_WEATHER_TASK, NULL, 1, &taskHandle, 0);
-            if(result == pdPASS) {
-                Serial.println("FetchWeather task launched");
-                nextCheckMillis = currentMillis + INTERVAL_PAGE_LIFETIME;
-            } else if(result == errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY) {
-                Serial.print("ERROR: Task creation failed due to insufficient memory! HEAP MEM=");
-                Serial.println(xPortGetFreeHeapSize());
-            } else {
-                Serial.print("ERROR: Task creation failed!!!");
-            }
-        }
-    } else if(appState == Sleeping) {
-        Serial.println("Sleeping now");
-        display.drawSleepingPage();
-        nextCheckMillis = currentMillis + 3600000; // 1 hour
-    } else if(appState == DeepSleeping) {
-        Serial.println("DEEP Sleeping now");
-        display.clearScreen();
-
-        // TODO Stay in this state for WAY longer, 
-        // TODO But make sure to set nextCheckMillis so that we immediately wake up when we need to
-        // At APPSTATE_DEEP_SLEEPING_HOUR_END
-        // For now, we sleep for INTERVAL_PAGE_LIFETIME then re-check and re-check... 
-        // also consider shutting down wifi and other things in this state..?
-        nextCheckMillis = currentMillis + INTERVAL_PAGE_LIFETIME;
-    }
-
 }

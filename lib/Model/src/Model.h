@@ -60,11 +60,11 @@ inline String weatherTypeToString(WeatherType weatherType) {
 enum UVIndex { Low, Moderate, High, VeryHigh, Extreme };
 struct WeatherData {
     bool setCorrectly;
-    std::vector<String> times;
+    std::vector<uint8_t> times;                          // hours of the below vectors, ascending. e.g. [4, 5, 6, 7]
     std::vector<bool> isDaytime;
     std::vector<WeatherType> weatherType;
     std::vector<String> temperatureCelcius;
-    std::vector<String> apparentTemperatureCelcius;                    // "Feels like" temp.
+    std::vector<String> apparentTemperatureCelcius;     // "Feels like" temp.
     std::vector<String> relativeHumidity;
     std::vector<String> precipitationProbability;
     std::vector<String> precipitation;

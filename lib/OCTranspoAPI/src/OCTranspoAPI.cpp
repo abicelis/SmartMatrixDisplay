@@ -68,7 +68,8 @@ void OCTranspoAPI::fetchTripsFor(RouteGroupData& data, const String& stopNo, con
             }
             arrivalTime -= OCTRANSPO_API_MINUTES_TO_SUBTRACT_FROM_ARRIVAL_TIME;
             String routeDestination = trip["TripDestination"];
-            bool arrivalIsEstimated = trip["AdjustmentAge"].as<float>() != -1;
+            bool arrivalIsEstimated = trip["AdjustmentAge"].as<float>() != -1 && trip["Longitude"] != "";
+
             BusLocation busLocation = None;
             if(routeNo == "88" && stopNo == "4483" && arrivalIsEstimated) {
                 busLocation = TooClose;

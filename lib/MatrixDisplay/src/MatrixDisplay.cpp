@@ -42,12 +42,11 @@ void MatrixDisplay::drawInitializationPage(uint8_t loadingBarWidthPixels) {
     INITIALIZATION_PAGE_BAR_THICKNESS_PX, INITIALIZATION_PAGE_BAR_CORNER_RADIUS_PX, _colorTextPrimary);
 }
 
-void MatrixDisplay::drawVickyCommutePage(RouteGroupData& data, const char* currentTime) {
+void MatrixDisplay::drawVickyCommutePage(RouteGroupData& data, WeatherData& weatherData, const char* currentTime) {
     fadeOutScreen();
     clearScreen();
 
-    //Draw icon
-    // _dma_display->drawBitmap(SCHEDULE_BUS_X_POSITION, SCHEDULE_BUS_Y_POSITION, icon_Bus, 7, 9, _colorTextPrimary);
+    // Draw icon
     _dma_display->drawRGBBitmap(SCHEDULE_ICON_X_POSITION, SCHEDULE_ICON_Y_POSITION, icon_OCTranspoLogo, 9, 9);
 
     // Draw Title
@@ -69,8 +68,8 @@ void MatrixDisplay::drawVickyCommutePage(RouteGroupData& data, const char* curre
 
     _trackingBusIndicatorPositions.clear();
 
-    for(uint8_t i = 0; i < data.routeDestinations.size() && i < SCHEDULE_MAX_ROUTES ; i++) {  
-        const auto &destination = data.routeDestinations[i]; 
+    if(data.routeDestinations.size() >= 1) {  // There should be only one route -> 88 Hurdman.
+        const auto &destination = data.routeDestinations[0]; 
 
         // Draw LTR. RouteNumber, then RouteLabel
         drawRouteSign(destination.routeType, PAGE_HORIZONTAL_MARGIN_PX, row-8, SCHEDULE_BUS_SIGN_WIDTH_PX, destination.routeNumber.c_str());
@@ -93,30 +92,47 @@ void MatrixDisplay::drawVickyCommutePage(RouteGroupData& data, const char* curre
             uint8_t arrivalStartXPos = getRightAlignStartingPoint(arrivalCStr, arrivalEndXPos);
             drawText(arrivalStartXPos, row, arrivalCStr);
 
-            if(trip.busLocation == FarAwayEnough) {
-                // _dma_display->drawPixel(arrivalStartXPos-5, row-2, _colorGreen);
-                // _dma_display->drawPixel(arrivalStartXPos-4, row-1, _colorGreen);
-                // _dma_display->drawPixel(arrivalStartXPos-3, row-2, _colorGreen);
-                // _dma_display->drawPixel(arrivalStartXPos-2, row-3, _colorGreen);
-
-                _dma_display->drawFastVLine(arrivalStartXPos-4, row-5, 5, _colorGreen);
-                _dma_display->drawFastVLine(arrivalStartXPos-3, row-4, 3, _colorGreen);
-                _dma_display->drawPixel(    arrivalStartXPos-2, row-3, _colorGreen);
-            } else {
-                // _dma_display->drawLine(arrivalStartXPos-4, row-3, arrivalStartXPos-2, row-1, _colorRed);
-                // _dma_display->drawLine(arrivalStartXPos-4, row-1, arrivalStartXPos-2, row-3, _colorRed);
-                _dma_display->fillRect(arrivalStartXPos-4, row-4, 3, 3, _colorRed);
-            }
-
             if(trip.arrivalIsEstimated) {
                 uint8_t trackingIndicatorXPos = arrivalStartXPos - SCHEDULE_BUS_ARRIVAL_TIME_AND_TRACKING_INDICATOR_MARGIN_PX;
-                _trackingBusIndicatorPositions.push_back(std::make_pair(trackingIndicatorXPos, row-7));
+                _trackingBusIndicatorPositions.push_back(std::make_tuple(trackingIndicatorXPos, row-7, trip.busLocation == FarAwayEnough));
             }
 
             xPos -= SCHEDULE_VICKY_COMMUTE_BETWEEN_TRIPS_SPACING_PX;
             j--;
         }
-        row = row + SCHEDULE_VERTICAL_SPACING_BETWEEN_BUSES_PX;
+    }
+
+    // Weather section
+    // Draw lines
+    _dma_display->drawFastHLine(PAGE_HORIZONTAL_MARGIN_PX, SCHEDULE_VICKY_COMMUTE_HR_HEIGHT,
+        PANEL_RES_X - PAGE_HORIZONTAL_MARGIN_PX*2, _colorTextSecondary);
+    _dma_display->drawFastVLine(64, SCHEDULE_VICKY_COMMUTE_HR_HEIGHT+3, SCHEDULE_VICKY_COMMUTE_VR_LENGTH, _colorTextSecondary);
+    
+
+    if(weatherData.times.size() == 2) {  // Should be 2 items here
+        uint8_t xPos = 0;
+        for (size_t i = 0; i < 2; ++i) {
+            String hourPretty = hourNumericToPretty(weatherData.times.at(i));
+            drawText(xPos + VICKY_COMMUTE_PAGE_TIME_LEFT_SPACING_X, VICKY_COMMUTE_PAGE_TIME_Y, hourPretty.c_str(), _colorTextPrimary, &Font5x5Fixed);
+            
+            const char* weatherImage = weatherTypeToImage(weatherData.weatherType.at(i), weatherData.isDaytime.at(i));
+            if(weatherImage != NULL)
+                drawASCWWImage(xPos+VICKY_COMMUTE_PAGE_ICON_LEFT_SPACING_X-12, VICKY_COMMUTE_PAGE_ICON_Y, 25, 25, weatherImage);
+            else {
+                Serial.print("Warning: weatherTypeToImage() returned NULL for weatherType= ");
+                Serial.print(weatherData.weatherType.at(i));
+                Serial.print(" daytime=");
+                Serial.println(weatherData.weatherType.at(i));
+            }
+
+            drawCenteredText(xPos+VICKY_COMMUTE_PAGE_ICON_LEFT_SPACING_X, VICKY_COMMUTE_PAGE_APPARENT_TEMP_Y, weatherData.apparentTemperatureCelcius.at(i).c_str(), _colorTextPrimary, &Font5x5Fixed);
+            
+
+            xPos=xPos+64;
+        }
+    } else {
+        Serial.print("Warning: Displaying VickyCommute, wrong number of weatherData items ");
+        Serial.println(weatherData.times.size());
     }
     fadeInScreen();
 
@@ -187,7 +203,7 @@ void MatrixDisplay::drawBusSchedulePage(RouteGroupData& data, RouteGroupType tri
 
             if(trip.arrivalIsEstimated) {
                 uint8_t trackingIndicatorXPos = arrivalStartXPos - SCHEDULE_BUS_ARRIVAL_TIME_AND_TRACKING_INDICATOR_MARGIN_PX;
-                _trackingBusIndicatorPositions.push_back(std::make_pair(trackingIndicatorXPos, row-7));
+                _trackingBusIndicatorPositions.push_back(std::make_tuple(trackingIndicatorXPos, row-7, false));
             }
 
             xPos -= SCHEDULE_BUS_BETWEEN_TRIPS_SPACING_PX;
@@ -225,7 +241,8 @@ void MatrixDisplay::drawWeatherPage(WeatherData& weatherData, const char* curren
 
     uint8_t xPos = 16;
     for (size_t i = 0; i < weatherData.times.size(); ++i) {
-        drawCenteredText(xPos, WEATHER_PAGE_TIME_POS_Y, weatherData.times.at(i).c_str(), _colorTextPrimary, &Font5x5Fixed);
+        String hourPretty = hourNumericToPretty(weatherData.times.at(i));
+        drawCenteredText(xPos, WEATHER_PAGE_TIME_POS_Y, hourPretty.c_str(), _colorTextPrimary, &Font5x5Fixed);
         const char* weatherImage = weatherTypeToImage(weatherData.weatherType.at(i), weatherData.isDaytime.at(i));
 
         if(weatherImage != NULL)
@@ -341,7 +358,7 @@ void MatrixDisplay::clearScreen() {
 ////////////////////////////////
 void MatrixDisplay::TrackingBusIndicatorTaskFunction(void *pvParameters) {
     MatrixDisplay* instance = static_cast<MatrixDisplay*>(pvParameters);
-    std::vector<std::pair<uint8_t, uint8_t>>& indicatorPositions = instance->_trackingBusIndicatorPositions;
+    std::vector<std::tuple<uint8_t, uint8_t, bool>>& indicatorPositions = instance->_trackingBusIndicatorPositions;
     MatrixPanel_I2S_DMA* dma_display = instance->_dma_display;
 
     // Serial.print("TrackingBusIndicatorTask INIT indicatorPositions=");
@@ -352,21 +369,28 @@ void MatrixDisplay::TrackingBusIndicatorTaskFunction(void *pvParameters) {
     for(;;) {
         brightness = 0;
         while(brightness < brightnessSteps) {
-            uint16_t color = colorWithIntensity(dma_display, COLOR_LIVE_R, 
-                                COLOR_LIVE_G, COLOR_LIVE_B, (float)brightness/brightnessSteps);
-            for (const auto &value : indicatorPositions)
-                dma_display->drawPixel(value.first, value.second, color);
+            for (const auto &value : indicatorPositions) {
+                uint16_t color;
+                if(std::get<2>(value))
+                    color = colorWithIntensity(dma_display, COLOR_GREEN_R, COLOR_GREEN_G, COLOR_GREEN_B, (float)brightness/brightnessSteps);
+                else
+                    color = colorWithIntensity(dma_display, COLOR_RED_R, COLOR_RED_G, COLOR_RED_B, (float)brightness/brightnessSteps);
+                dma_display->drawPixel(std::get<0>(value), std::get<1>(value), color);
+            }
             brightness=brightness+1;
             vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_STEP_MS));
         }
         vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_TIME_BETWEEN_PHASE_MS));
         brightness = 0;
         while(brightness < brightnessSteps) {
-            uint16_t color = colorWithIntensity(dma_display, COLOR_LIVE_R, 
-                                COLOR_LIVE_G, COLOR_LIVE_B, (float)brightness/brightnessSteps);
             for (const auto &value : indicatorPositions) {
-                dma_display->drawFastVLine(value.first-2, value.second-1, 2, color);
-                dma_display->drawFastHLine(value.first-1, value.second-2, 2, color);
+                uint16_t color;
+                if(std::get<2>(value))
+                    color = colorWithIntensity(dma_display, COLOR_GREEN_R, COLOR_GREEN_G, COLOR_GREEN_B, (float)brightness/brightnessSteps);
+                else
+                    color = colorWithIntensity(dma_display, COLOR_RED_R, COLOR_RED_G, COLOR_RED_B, (float)brightness/brightnessSteps);
+                dma_display->drawFastVLine(std::get<0>(value)-2, std::get<1>(value)-1, 2, color);
+                dma_display->drawFastHLine(std::get<0>(value)-1, std::get<1>(value)-2, 2, color);
             }
             brightness=brightness+1;
             vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_STEP_MS));
@@ -374,12 +398,15 @@ void MatrixDisplay::TrackingBusIndicatorTaskFunction(void *pvParameters) {
         vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_TIME_AFTER_ANIMATION_FULL_MS));
         brightness = brightnessSteps;
         while(brightness >= 0) {
-            uint16_t color = colorWithIntensity(dma_display, COLOR_LIVE_R, 
-                                COLOR_LIVE_G, COLOR_LIVE_B, (float)brightness/brightnessSteps);
             for (const auto &value : indicatorPositions) {
-                dma_display->drawPixel(value.first, value.second, color);
-                dma_display->drawFastVLine(value.first-2, value.second-1, 2, color);
-                dma_display->drawFastHLine(value.first-1, value.second-2, 2, color);
+                uint16_t color;
+                if(std::get<2>(value))
+                    color = colorWithIntensity(dma_display, COLOR_GREEN_R, COLOR_GREEN_G, COLOR_GREEN_B, (float)brightness/brightnessSteps);
+                else
+                    color = colorWithIntensity(dma_display, COLOR_RED_R, COLOR_RED_G, COLOR_RED_B, (float)brightness/brightnessSteps);
+                dma_display->drawPixel(std::get<0>(value), std::get<1>(value), color);
+                dma_display->drawFastVLine(std::get<0>(value)-2, std::get<1>(value)-1, 2, color);
+                dma_display->drawFastHLine(std::get<0>(value)-1, std::get<1>(value)-2, 2, color);
             }
             brightness=brightness-1;
             vTaskDelay(pdMS_TO_TICKS(SCHEDULE_TRACKING_INDICATOR_ANIMATION_STEP_MS));

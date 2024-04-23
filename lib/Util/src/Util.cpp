@@ -36,6 +36,10 @@ void currentHourMinute(char* buffer, size_t bufferSize) {
         memmove(buffer, buffer+1, 5);
 }
 
+String hourNumericToPretty(uint8_t hour) {
+    return (hour > 12 ? String(hour - 12) + String(" pm") : String(hour) + String(" am")); 
+}
+
 void printTrips(const RouteGroupData& data) {
     Serial.println("Trips:");
     for(const auto &destination: data.routeDestinations) {
@@ -55,6 +59,10 @@ void printTrips(const RouteGroupData& data) {
 
 void updateAppState(AppState& appState, AppPage& appPage) {
     // appState = NextPageLoading;
+    // appPage = VickyCommutePage;
+    // return;
+
+    // appState = NextPageLoading;
     // appPage = WeatherPage;
     // return;
 
@@ -70,12 +78,8 @@ void updateAppState(AppState& appState, AppPage& appPage) {
 
     if(vickyCommute) {
         Serial.println("- Result: VickyCommute");
-        appState = NextPageLoading;
-        
-        if(appPage == NoPage || appPage == WeatherPage)
-            appPage = VickyCommutePage;
-        else
-            appPage = WeatherPage;
+        appState = NextPageLoading;        
+        appPage = VickyCommutePage;
     } else if(sleeping) {
         Serial.println("- Result: Sleeping");
         appState = Sleeping;

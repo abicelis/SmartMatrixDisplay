@@ -56,7 +56,15 @@
 // UI - VICKY COMMUTE PAGE
 #define SCHEDULE_VICKY_COMMUTE_MAX_TRIPS 3
 #define SCHEDULE_VICKY_COMMUTE_BETWEEN_TRIPS_SPACING_PX 20
+#define SCHEDULE_VICKY_COMMUTE_HR_HEIGHT 27
+#define SCHEDULE_VICKY_COMMUTE_VR_LENGTH 32
 
+
+#define VICKY_COMMUTE_PAGE_TIME_LEFT_SPACING_X 5
+#define VICKY_COMMUTE_PAGE_TIME_Y 35
+#define VICKY_COMMUTE_PAGE_ICON_LEFT_SPACING_X 48
+#define VICKY_COMMUTE_PAGE_ICON_Y 28
+#define VICKY_COMMUTE_PAGE_APPARENT_TEMP_Y 60
 
 // UI - SCHEDULE PAGE
 #define SCHEDULE_MAX_ROUTES 4
@@ -126,7 +134,8 @@
 // Memory management - Change these if you know what you're doing
 // This stack depth is specified in words, i believe 1 word = 4 bytes on the ESP32
 // use Util.printHighWaterMarkForTask() to troubleshoot
-#define STACK_DEPTH_ROUTES_TASK 8000                  // Remaining stack ~2k words
+#define STACK_DEPTH_FETCH_COMMUTE_TASK 8000           // Remaining stack ~2k words
+#define STACK_DEPTH_FETCH_ROUTES_TASK 8000            // Remaining stack ~2k words
 #define STACK_DEPTH_FETCH_WEATHER_TASK 8000           // Remaining stack ~2k words
 #define STACK_DEPTH_TRACKING_BUS_INDICATORS_TASK 1100 // Remaining stack ~500 words
 #define STACK_DEPTH_EXTRA_WEATHER_DATA_TASK 1500      // Remaining stack ~500 words
@@ -153,10 +162,6 @@
 #define COLOR_ROUTE_LOCAL_R 60
 #define COLOR_ROUTE_LOCAL_G 60
 #define COLOR_ROUTE_LOCAL_B 60
-
-#define COLOR_LIVE_R 224
-#define COLOR_LIVE_G 112
-#define COLOR_LIVE_B 56
 
 #define COLOR_RED_R 184
 #define COLOR_RED_G 33

@@ -11,7 +11,7 @@ OpenMeteoAPI::OpenMeteoAPI(WiFiClientSecure* wifiClient, HTTPClient* httpClient)
     _httpClient = httpClient;
 }
 
-WeatherData OpenMeteoAPI::fetchCurrentWeather(const uint8_t clockHour) {
+WeatherData OpenMeteoAPI::fetchCurrentWeather(const uint8_t clockHour, bool commuteMode) {
     WeatherData result;
     _httpClient->begin(*_wifiClient, OPEN_METEO_API_ENDPOINT);
     
@@ -30,32 +30,44 @@ WeatherData OpenMeteoAPI::fetchCurrentWeather(const uint8_t clockHour) {
         // serializeJsonPretty(doc, out);
         // Serial.println(out);
 
-        time_t sunriseTimestamp = iso8601DateStringToUnixTimestamp(doc["daily"]["sunrise"][0]);
-        time_t sunsetTimestamp = iso8601DateStringToUnixTimestamp(doc["daily"]["sunset"][0]);
-
         result.setCorrectly = true;
-        for(uint8_t currentHour = clockHour; currentHour <= clockHour+(OPEN_METEO_API_HOUR_STEP*3); currentHour += OPEN_METEO_API_HOUR_STEP) {
-            String timeStr = (currentHour > 12 ? String(currentHour - 12) + String(" pm") : String(currentHour) + String(" am")); 
-            result.times.push_back(timeStr);
-
-            time_t currentTimestamp = iso8601DateStringToUnixTimestamp(doc["hourly"]["time"][currentHour]);
-            result.isDaytime.push_back(currentTimestamp >= sunriseTimestamp && currentTimestamp <= sunsetTimestamp);
-
-            WeatherType type = WMOCodeToWeatherType(doc["hourly"]["weather_code"][currentHour].as<int>());
-            if(type == Unknown) {
-                Serial.print("Warning: WMOCodeToWeatherType returned 'Unknown for code");
-                Serial.println(doc["hourly"]["weather_code"][currentHour].as<int>());
+        if(commuteMode) {
+            insertWeatherData(clockHour, doc, result);
+            insertWeatherData(15, doc, result);             // 3pm
+        } else {
+            for(uint8_t currentHour = clockHour; currentHour <= clockHour+(OPEN_METEO_API_HOUR_STEP*3); currentHour += OPEN_METEO_API_HOUR_STEP) {
+                insertWeatherData(currentHour, doc, result);
             }
-            result.weatherType.push_back(type);
-            result.temperatureCelcius.push_back(String(doc["hourly"]["temperature_2m"][currentHour].as<int>()) + String("°"));
-            result.apparentTemperatureCelcius.push_back(String(doc["hourly"]["apparent_temperature"][currentHour].as<int>()) + String("°"));
-            result.relativeHumidity.push_back(String(doc["hourly"]["relative_humidity_2m"][currentHour].as<int>()) + String("%"));
-            result.precipitationProbability.push_back(String(doc["hourly"]["precipitation_probability"][currentHour].as<int>()) + String("%"));
-            result.precipitation.push_back(String(doc["hourly"]["precipitation"][currentHour].as<float>(), 1) + String("mm"));
         }
+
     }
     _httpClient->end();
     return result;
+}
+
+void OpenMeteoAPI::insertWeatherData(uint8_t currentHour, JsonDocument doc, WeatherData& result) {
+    Serial.print("Inserting weather data for ");
+    Serial.println(currentHour);
+
+    time_t sunriseTimestamp = iso8601DateStringToUnixTimestamp(doc["daily"]["sunrise"][0]);
+    time_t sunsetTimestamp = iso8601DateStringToUnixTimestamp(doc["daily"]["sunset"][0]);
+
+    result.times.push_back(currentHour);
+
+    time_t currentTimestamp = iso8601DateStringToUnixTimestamp(doc["hourly"]["time"][currentHour]);
+    result.isDaytime.push_back(currentTimestamp >= sunriseTimestamp && currentTimestamp <= sunsetTimestamp);
+
+    WeatherType type = WMOCodeToWeatherType(doc["hourly"]["weather_code"][currentHour].as<int>());
+    if(type == Unknown) {
+        Serial.print("Warning: WMOCodeToWeatherType returned 'Unknown for code");
+        Serial.println(doc["hourly"]["weather_code"][currentHour].as<int>());
+    }
+    result.weatherType.push_back(type);
+    result.temperatureCelcius.push_back(String(doc["hourly"]["temperature_2m"][currentHour].as<int>()) + String("°"));
+    result.apparentTemperatureCelcius.push_back(String(doc["hourly"]["apparent_temperature"][currentHour].as<int>()) + String("°"));
+    result.relativeHumidity.push_back(String(doc["hourly"]["relative_humidity_2m"][currentHour].as<int>()) + String("%"));
+    result.precipitationProbability.push_back(String(doc["hourly"]["precipitation_probability"][currentHour].as<int>()) + String("%"));
+    result.precipitation.push_back(String(doc["hourly"]["precipitation"][currentHour].as<float>(), 1) + String("mm"));
 }
 
 
