@@ -13,15 +13,14 @@ OpenMeteoAPI::OpenMeteoAPI(WiFiClientSecure* wifiClient, HTTPClient* httpClient)
 
 WeatherData OpenMeteoAPI::fetchCurrentWeather(const uint8_t clockHour, bool commuteMode) {
     WeatherData result;
-    _httpClient->begin(*_wifiClient, OPEN_METEO_API_ENDPOINT);
-    
+    result.setCorrectly = true;
+    _httpClient->begin(*_wifiClient, OPEN_METEO_API_FORECAST);
     int tries = OPEN_METEO_API_ENDPOINT_TRIES;
     int httpCode = -1;
     while (httpCode != 200 && tries > 0) {
         httpCode = _httpClient->GET();
         tries--;
     }
-
     if(httpCode == 200) {
         JsonDocument doc;
         deserializeJson(doc, _httpClient->getStream());
@@ -30,18 +29,45 @@ WeatherData OpenMeteoAPI::fetchCurrentWeather(const uint8_t clockHour, bool comm
         // serializeJsonPretty(doc, out);
         // Serial.println(out);
 
-        result.setCorrectly = true;
+        result.UVICurrent = doc["hourly"]["uv_index"][clockHour].as<uint8_t>();
         if(commuteMode) {
-            insertWeatherData(clockHour, doc, result);
+            insertWeatherData(clockHour, doc, result);      // clockHour and
             insertWeatherData(15, doc, result);             // 3pm
         } else {
-            for(uint8_t currentHour = clockHour; currentHour <= clockHour+(OPEN_METEO_API_HOUR_STEP*3); currentHour += OPEN_METEO_API_HOUR_STEP) {
-                insertWeatherData(currentHour, doc, result);
-            }
+            insertWeatherData(clockHour, doc, result);      // clockHour + 2 hours in the future
+            insertWeatherData(clockHour+1, doc, result);
+            insertWeatherData(clockHour+2, doc, result);
         }
-
+    } else {
+        result.setCorrectly = false;
     }
     _httpClient->end();
+
+    if(!commuteMode && result.setCorrectly) {
+        _httpClient->begin(*_wifiClient, OPEN_METEO_API_AIR_QUALITY);
+        int tries = OPEN_METEO_API_ENDPOINT_TRIES;
+        int httpCode = -1;
+        while (httpCode != 200 && tries > 0) {
+            httpCode = _httpClient->GET();
+            tries--;
+        }
+        if(httpCode == 200) {
+            JsonDocument doc;
+            deserializeJson(doc, _httpClient->getStream());
+
+            // String out = "";
+            // serializeJsonPretty(doc, out);
+            // Serial.println(out);
+            result.AQICurrent = doc["current"]["us_aqi"].as<uint16_t>();
+        } else {
+            result.setCorrectly = false;
+        }
+        _httpClient->end();
+    }
+    
+
+
+
     return result;
 }
 
@@ -66,6 +92,7 @@ void OpenMeteoAPI::insertWeatherData(uint8_t currentHour, JsonDocument doc, Weat
     result.temperatureCelcius.push_back(String(doc["hourly"]["temperature_2m"][currentHour].as<int>()) + String("°"));
     result.apparentTemperatureCelcius.push_back(String(doc["hourly"]["apparent_temperature"][currentHour].as<int>()) + String("°"));
     result.relativeHumidity.push_back(String(doc["hourly"]["relative_humidity_2m"][currentHour].as<int>()) + String("%"));
+    result.windSpeed.push_back(String(doc["hourly"]["wind_speed_10m"][currentHour].as<float>(), 1) + String("Kmh"));
     result.precipitationProbability.push_back(String(doc["hourly"]["precipitation_probability"][currentHour].as<int>()) + String("%"));
     result.precipitation.push_back(String(doc["hourly"]["precipitation"][currentHour].as<float>(), 1) + String("mm"));
 }

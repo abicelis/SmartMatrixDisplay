@@ -46,6 +46,13 @@ class MatrixDisplay {
         uint16_t _colorRouteFrequent = _dma_display->color565(COLOR_ROUTE_FREQUENT_R, COLOR_ROUTE_FREQUENT_G, COLOR_ROUTE_FREQUENT_B);
         uint16_t _colorRouteLocal = _dma_display->color565(COLOR_ROUTE_LOCAL_R, COLOR_ROUTE_LOCAL_G, COLOR_ROUTE_LOCAL_B);
 
+        uint16_t _colorLow = _dma_display->color565(152, 217, 47);
+        uint16_t _colorModerate = _dma_display->color565(255, 207, 65);
+        uint16_t _colorHigh = _dma_display->color565(233, 136, 25);
+        uint16_t _colorVeryHigh = _dma_display->color565(222, 61, 43);
+        uint16_t _colorExtreme = _dma_display->color565(146, 93, 198);
+        uint16_t _colorHazardous = _dma_display->color565(102, 37, 28);
+        
         std::vector<std::tuple<uint8_t, uint8_t, bool>> _trackingBusIndicatorPositions;
         TaskHandle_t trackingBusIndicatorTaskHandle = NULL;
         static void TrackingBusIndicatorTaskFunction(void *pvParameters);
@@ -53,6 +60,7 @@ class MatrixDisplay {
         WeatherData _extraWeatherData;
         TaskHandle_t extraWeatherDataTaskHandle = NULL;
         static void ExtraWeatherDataTaskFunction(void *pvParameters);
+        static void ExtraWeatherDataVickyCommuteTaskFunction(void *pvParameters);
 
         TaskHandle_t sleepingAnimationTaskHandle = NULL;
         static void SleepingAnimationTaskFunction(void *pvParameters);
@@ -73,6 +81,7 @@ class MatrixDisplay {
         uint8_t drawTextEnd(uint8_t x, uint8_t y, const char* text, uint16_t color, const GFXfont *f);
         void drawRouteSign(RouteType type, uint8_t x, uint8_t y, uint8_t width, const char* text);
         void drawMinuteSymbol(uint8_t x, uint8_t y);
+        void drawVerticalBarChart(uint8_t x, uint8_t y, uint8_t width, uint8_t height, float percentComplete, uint16_t colorBorder, uint16_t colorBar);
         void drawASCWWImage(int x, int y, int width, int height, const char* imageArray); // ASCWW = ArduinoSmartClockWithWeather
 
         String shortenRouteDestination(const String& label);
@@ -82,5 +91,7 @@ class MatrixDisplay {
         void fadeOutScreen();
         void fadeInScreen();
         static uint16_t colorWithIntensity(MatrixPanel_I2S_DMA* dma_display, uint8_t r, uint8_t g, uint8_t b, float fraction);
+        uint16_t colorForUVIndex(uint8_t UVIndex);
+        uint16_t colorForAQI(uint16_t AQI);
 };
 #endif

@@ -85,8 +85,8 @@ const GFXglyph Font5x5FixedGlyphs[] PROGMEM = {
   {   117,   4,   5,   5,    0,   -4 },   // 0x50 'P'
   {   120,   4,   5,   5,    0,   -4 },   // 0x51 'Q'
   {   123,   4,   5,   5,    0,   -4 },   // 0x52 'R'
-  {   126,   4,   5,   6,    0,   -4 },   // 0x53 'S'
-  {   129,   3,   5,   6,    0,   -4 },   // 0x54 'T'
+  {   126,   4,   5,   5,    0,   -4 },   // 0x53 'S'
+  {   129,   3,   5,   4,    0,   -4 },   // 0x54 'T'
   {   132,   4,   5,   5,    0,   -4 },   // 0x55 'U'
   {   135,   5,   5,   6,    0,   -4 },   // 0x56 'V'
   {   139,   5,   5,   6,    0,   -4 },   // 0x57 'W'
@@ -182,5 +182,5 @@ const GFXglyph Font5x5FixedGlyphs[] PROGMEM = {
 };
 
 const GFXfont Font5x5Fixed PROGMEM = {
-  (uint8_t  *)Font5x5FixedBitmaps, 
-  (GFXglyph *)Font5x5FixedGlyphs, 0x20, 0xB0,  5 };
+  (uint8_t  *)Font5x5FixedBitmaps,  
+  (GFXglyph *)Font5x5FixedGlyphs, 0x20, 0xB0,   5 };

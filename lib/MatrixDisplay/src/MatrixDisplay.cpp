@@ -141,6 +141,11 @@ void MatrixDisplay::drawVickyCommutePage(RouteGroupData& data, WeatherData& weat
             STACK_DEPTH_TRACKING_BUS_INDICATORS_TASK, this, 1, &trackingBusIndicatorTaskHandle, 1);
         // Serial.println("TrackingBusIndicatorTask LAUNCHED");
     }
+
+    _extraWeatherData = weatherData;
+    xTaskCreatePinnedToCore(ExtraWeatherDataVickyCommuteTaskFunction, "ExtraWeatherDataVickyCommuteTaskFunction",
+        STACK_DEPTH_EXTRA_WEATHER_DATA_TASK, this, 1, &extraWeatherDataTaskHandle, 1);
+    // Serial.println("ExtraWeatherDataTask LAUNCHED");
 }
 
 void MatrixDisplay::drawBusSchedulePage(RouteGroupData& data, RouteGroupType tripsType, const char* currentTime) {
@@ -203,7 +208,7 @@ void MatrixDisplay::drawBusSchedulePage(RouteGroupData& data, RouteGroupType tri
 
             if(trip.arrivalIsEstimated) {
                 uint8_t trackingIndicatorXPos = arrivalStartXPos - SCHEDULE_BUS_ARRIVAL_TIME_AND_TRACKING_INDICATOR_MARGIN_PX;
-                _trackingBusIndicatorPositions.push_back(std::make_tuple(trackingIndicatorXPos, row-7, false));
+                _trackingBusIndicatorPositions.push_back(std::make_tuple(trackingIndicatorXPos, row-7, trip.busLocation == FarAwayEnough));
             }
 
             xPos -= SCHEDULE_BUS_BETWEEN_TRIPS_SPACING_PX;
@@ -235,11 +240,18 @@ void MatrixDisplay::drawWeatherPage(WeatherData& weatherData, const char* curren
         PANEL_RES_X - PAGE_HORIZONTAL_MARGIN_PX*2, _colorTextSecondary);
 
     // Divider Lines
-    _dma_display->drawFastVLine(32, 14, 48, _colorTextSecondary);
-    _dma_display->drawFastVLine(64, 14, 48, _colorTextSecondary);
-    _dma_display->drawFastVLine(96, 14, 48, _colorTextSecondary);
+    // _dma_display->drawFastVLine(32, 14, 27, _colorTextSecondary);
+    // _dma_display->drawFastVLine(64, 14, 27, _colorTextSecondary);
+    // _dma_display->drawFastVLine(96, 14, 27, _colorTextSecondary);
 
-    uint8_t xPos = 16;
+    // UV index and AQI
+    _dma_display->fillRoundRect(3, 15, 27, 28, 3, _colorTextSecondary);
+    drawText(5, 40, "UV", _colorTextPrimary, &Font5x5Fixed);
+    drawText(19, 40, "AQ", _colorTextPrimary, &Font5x5Fixed);
+    drawVerticalBarChart(8, 17, 5, 17, (float)weatherData.UVICurrent/11, _colorTextSecondary, colorForUVIndex(weatherData.UVICurrent));
+    drawVerticalBarChart(20, 17, 5, 17, (float)weatherData.AQICurrent/500, _colorTextSecondary, colorForAQI(weatherData.AQICurrent));
+
+    uint8_t xPos = 48;
     for (size_t i = 0; i < weatherData.times.size(); ++i) {
         String hourPretty = hourNumericToPretty(weatherData.times.at(i));
         drawCenteredText(xPos, WEATHER_PAGE_TIME_POS_Y, hourPretty.c_str(), _colorTextPrimary, &Font5x5Fixed);
@@ -433,19 +445,39 @@ void MatrixDisplay::ExtraWeatherDataTaskFunction(void *pvParameters) {
             uint16_t color = colorWithIntensity(dma_display, COLOR_TEXT_PRIMARY_R, 
                                 COLOR_TEXT_PRIMARY_G, COLOR_TEXT_PRIMARY_B, (float)brightness/brightnessSteps);
 
-            uint8_t xPos = 16;
-            if(page == 0) {
+            uint8_t xPos = 48;
+
+            switch (page)
+            {
+            case 0:
+                instance->drawCenteredText(16, WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_Y, "Temp", color, &Font5x5Fixed);
+                instance->drawCenteredText(16, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_Y, "Feel", color, &Font5x5Fixed);
                 for (size_t i = 0; i < weatherData.times.size(); ++i) {
-                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_TOP_Y, weatherData.temperatureCelcius.at(i).c_str(), color, &Font5x7Fixed);
+                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_Y, weatherData.temperatureCelcius.at(i).c_str(), color, &Font5x5Fixed);
                     instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_Y, weatherData.apparentTemperatureCelcius.at(i).c_str(), color, &Font5x5Fixed);
                     xPos=xPos+32;
                 }
-            } else { // page == 1
+                break;
+
+            case 1:
+                instance->drawCenteredText(16, WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_Y, "Humidity", color, &Font5x5Fixed);
+                instance->drawCenteredText(16, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_Y, "Wind", color, &Font5x5Fixed);
                 for (size_t i = 0; i < weatherData.times.size(); ++i) {
-                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_TOP_Y, weatherData.precipitationProbability.at(i).c_str(), color, &Font5x5Fixed);
+                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_Y, weatherData.relativeHumidity.at(i).c_str(), color, &Font5x5Fixed);
+                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_Y, weatherData.windSpeed.at(i).c_str(), color, &Font5x5Fixed);
+                    xPos=xPos+32;
+                }
+                break;
+
+            case 2:
+                instance->drawCenteredText(16, WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_Y, "Rain %", color, &Font5x5Fixed);
+                instance->drawCenteredText(16, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_Y, "Rain", color, &Font5x5Fixed);
+                for (size_t i = 0; i < weatherData.times.size(); ++i) {
+                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_Y, weatherData.precipitationProbability.at(i).c_str(), color, &Font5x5Fixed);
                     instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_Y, weatherData.precipitation.at(i).c_str(), color, &Font5x5Fixed);
                     xPos=xPos+32;
                 }
+                break;
             }
 
             if(fadingIn)
@@ -464,10 +496,73 @@ void MatrixDisplay::ExtraWeatherDataTaskFunction(void *pvParameters) {
                 vTaskDelay(pdMS_TO_TICKS(50));
             }
         }
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        if(page == 0)
-            page = 1;
-        else
+        vTaskDelay(pdMS_TO_TICKS(300));
+        page += 1;
+        if(page == 3)
+            page = 0;
+    }
+}
+
+void MatrixDisplay::ExtraWeatherDataVickyCommuteTaskFunction(void *pvParameters) {
+    MatrixDisplay* instance = static_cast<MatrixDisplay*>(pvParameters);
+    WeatherData& weatherData = instance->_extraWeatherData;
+    MatrixPanel_I2S_DMA* dma_display = instance->_dma_display;
+    // Serial.println("ExtraWeatherDataVickyCommuteTaskFunction INIT");
+
+    uint8_t page = 0;
+    for(;;) {
+
+        int brightness = 0;
+        bool fadingIn = true;
+        int brightnessSteps = 20;
+        for(;;) {
+            uint8_t posY = 13;
+            uint8_t posX = 70;
+            uint16_t color = colorWithIntensity(dma_display, COLOR_TEXT_PRIMARY_R, 
+                                COLOR_TEXT_PRIMARY_G, COLOR_TEXT_PRIMARY_B, (float)brightness/brightnessSteps);
+
+            uint8_t xPos = 5;
+
+            switch (page)
+            {
+            case 0:
+                for (size_t i = 0; i < weatherData.times.size(); ++i) {
+                    instance->drawText(xPos, VICKY_COMMUTE_PAGE_EXTRA_FIRST_Y, "Air", color, &Font5x5Fixed);
+                    instance->drawText(xPos, VICKY_COMMUTE_PAGE_EXTRA_SECOND_Y, weatherData.relativeHumidity.at(i).c_str(), color, &Font5x5Fixed);
+                    instance->drawText(xPos, VICKY_COMMUTE_PAGE_EXTRA_THIRD_Y, weatherData.windSpeed.at(i).c_str(), color, &Font5x5Fixed);
+                    xPos=xPos+64;
+                }
+                break;
+
+            case 1:
+                for (size_t i = 0; i < weatherData.times.size(); ++i) {
+                    instance->drawText(xPos, VICKY_COMMUTE_PAGE_EXTRA_FIRST_Y, "Rain", color, &Font5x5Fixed);
+                    instance->drawText(xPos, VICKY_COMMUTE_PAGE_EXTRA_SECOND_Y, weatherData.precipitationProbability.at(i).c_str(), color, &Font5x5Fixed);
+                    instance->drawText(xPos, VICKY_COMMUTE_PAGE_EXTRA_THIRD_Y, weatherData.precipitation.at(i).c_str(), color, &Font5x5Fixed);
+                    xPos=xPos+64;
+                }
+                break;
+            }
+
+            if(fadingIn)
+                brightness=brightness+2;
+            else
+                brightness--;
+
+            if(brightness > brightnessSteps) {
+                brightness = brightnessSteps;
+                vTaskDelay(pdMS_TO_TICKS(5000));
+                fadingIn = false;
+            } else if(brightness == -1) {
+                break;
+            }  
+            else {
+                vTaskDelay(pdMS_TO_TICKS(50));
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(300));
+        page += 1;
+        if(page == 2)
             page = 0;
     }
 }
@@ -656,6 +751,27 @@ void MatrixDisplay::drawMinuteSymbol(uint8_t x, uint8_t y) {
     _dma_display->drawLine(x, y, x, y+2, _colorTextPrimary);
 }
 
+void MatrixDisplay::drawVerticalBarChart(uint8_t x, uint8_t y, uint8_t width, uint8_t height, float percentComplete, uint16_t colorBorder, uint16_t colorBar) {
+    _dma_display->drawRect(x, y, width, height, colorBorder);
+    uint8_t barFullHeight = height-2;
+    uint8_t barActualHeight = (float)barFullHeight * percentComplete;
+    if(barActualHeight == 0)
+        barActualHeight = 2;
+    if(barActualHeight > barFullHeight)
+        barActualHeight = barFullHeight;
+
+    // Serial.print("percentComplete ");
+    // Serial.print(percentComplete);
+    // Serial.print(" barFullHeight ");
+    // Serial.print(barFullHeight);
+    // Serial.print(" barActualHeight ");
+    // Serial.println(barActualHeight);
+    // Serial.print(" mathy ");
+    // Serial.println(y + 1 + barFullHeight - barActualHeight);
+
+    _dma_display->fillRect(x+1, y + 1 + barFullHeight - barActualHeight, width-2, barActualHeight, colorBar);
+}
+
 void MatrixDisplay::drawASCWWImage(int x, int y, int width, int height, const char* imageArray) {
   unsigned int count = 0;
   char first = 0;
@@ -744,4 +860,32 @@ void MatrixDisplay::fadeInScreen() {
 
 uint16_t MatrixDisplay::colorWithIntensity(MatrixPanel_I2S_DMA* dma_display, uint8_t r, uint8_t g, uint8_t b, float fraction) {
     return dma_display->color565((uint8_t)r*fraction,(uint8_t)g*fraction,(uint8_t)b*fraction);
+}
+
+uint16_t MatrixDisplay::colorForUVIndex(uint8_t UVIndex){
+    if(UVIndex <= 2)
+        return _colorLow;
+    else if(UVIndex <= 5)
+        return _colorModerate;
+    else if(UVIndex <= 7)
+        return _colorHigh;
+    else if(UVIndex <= 10)
+        return _colorVeryHigh;
+    else 
+        return _colorExtreme;
+}
+
+uint16_t MatrixDisplay::colorForAQI(uint16_t AQI){
+    if(AQI <= 50)
+        return _colorLow;
+    else if(AQI <= 100)
+        return _colorModerate;
+    else if(AQI <= 150)
+        return _colorHigh;
+    else if(AQI <= 200)
+        return _colorVeryHigh;
+    else if(AQI <= 300)
+        return _colorExtreme;
+    else
+        return _colorHazardous;
 }

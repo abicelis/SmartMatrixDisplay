@@ -10,13 +10,13 @@
 #define OCTRANSPO_API_MIN_ARRIVAL_TIME_MINUTES 2
 #define OCTRANSPO_API_MINUTES_TO_SUBTRACT_FROM_ARRIVAL_TIME 1
 #define OCTRANSPO_API_88_HURDMAN_LONGITUDE_THRESHOLD_BUS_FAR_ENOUGH_AWAY -75.7654
-#define OC_TRANSPO_API_NEXT_TRIPS_FOR_STOP_ENDPOINT "https://api.octranspo1.com/v2.0/GetNextTripsForStop?appID=<your_app_id>&apiKey=<your_api_key>"
+#define OCTRANSPO_API_NEXT_TRIPS_FOR_STOP_ENDPOINT "https://api.octranspo1.com/v2.0/GetNextTripsForStop?appID=<your_app_id>&apiKey=<your_api_key>"
 // For more info, see: https://www.octranspo.com/en/plan-your-trip/travel-tools/developers/dev-doc#method-GetNextTripsForStop
 
 // OpenMeteoAPI
-#define OPEN_METEO_API_ENDPOINT "https://api.open-meteo.com/v1/forecast?latitude=45.354305&longitude=-75.73605&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation_probability,precipitation,weather_code&daily=sunrise,sunset&timezone=America%2FNew_York&forecast_days=2"
+#define OPEN_METEO_API_FORECAST "https://api.open-meteo.com/v1/forecast?latitude=45.354305&longitude=-75.73605&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,wind_speed_10m,uv_index&daily=sunrise,sunset&timezone=America%2FNew_York&forecast_days=2"
+#define OPEN_METEO_API_AIR_QUALITY "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=45.354305&longitude=-75.73605&timezone=America%2FNew_York&current=european_aqi,us_aqi,uv_index&forecast_days=1"
 #define OPEN_METEO_API_ENDPOINT_TRIES 2
-#define OPEN_METEO_API_HOUR_STEP 1
 
 // NTP
 #define NTP_SERVER "pool.ntp.org"
@@ -66,6 +66,10 @@
 #define VICKY_COMMUTE_PAGE_ICON_Y 28
 #define VICKY_COMMUTE_PAGE_APPARENT_TEMP_Y 60
 
+#define VICKY_COMMUTE_PAGE_EXTRA_FIRST_Y 44
+#define VICKY_COMMUTE_PAGE_EXTRA_SECOND_Y 52
+#define VICKY_COMMUTE_PAGE_EXTRA_THIRD_Y 60
+ 
 // UI - SCHEDULE PAGE
 #define SCHEDULE_MAX_ROUTES 4
 #define SCHEDULE_MAX_TRIPS 2
@@ -94,8 +98,7 @@
 
 #define WEATHER_PAGE_TIME_POS_Y 20
 #define WEATHER_PAGE_WEATHER_ICON_POS_Y 21
-#define WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_TOP_Y 53
-#define WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_TOP_Y 51
+#define WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_Y 51
 #define WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_Y 60
 
 
