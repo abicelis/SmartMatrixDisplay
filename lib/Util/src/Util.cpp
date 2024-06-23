@@ -10,8 +10,15 @@ uint8_t currentHourOfDay() {
     time_t now;
     time(&now);
     struct tm *timeinfo = localtime(&now);
-    uint8_t hour = timeinfo->tm_hour;
-    return hour;
+    uint8_t hod = timeinfo->tm_hour;
+    return hod;
+}
+uint8_t currentDayOfMonth() {
+    time_t now;
+    time(&now);
+    struct tm *timeinfo = localtime(&now);
+    uint8_t dom = timeinfo->tm_mday;
+    return dom;
 }
 void currentDateFull(char* buffer, size_t bufferSize) {
     time_t now;

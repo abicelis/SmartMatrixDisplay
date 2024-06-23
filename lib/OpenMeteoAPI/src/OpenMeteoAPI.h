@@ -4,10 +4,11 @@
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
 #include <Model.h>
+#include <WeatherData.h>
 class OpenMeteoAPI {
     public:
         OpenMeteoAPI(WiFiClientSecure* wifiClient, HTTPClient* httpClient);
-        WeatherData fetchCurrentWeather(const uint8_t clockHour, bool commuteMode);
+        void fetchCurrentWeather(WeatherData& weatherData, const uint8_t clockHour, bool commuteMode);
     private:
         WiFiClientSecure* _wifiClient;
         HTTPClient* _httpClient;

@@ -3,6 +3,7 @@
 #include <Model.h>
 #include <RouteGroupData.h>
 uint8_t currentHourOfDay();
+uint8_t currentDayOfMonth();
 void currentDateFull(char* buffer, size_t bufferSize);
 void currentDateShort(char* buffer, size_t bufferSize);
 void currentHourMinute(char* buffer, size_t bufferSize);

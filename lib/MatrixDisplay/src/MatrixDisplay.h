@@ -2,6 +2,7 @@
 #define MATRIX_DISPLAY_H
 #include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>
 #include <Model.h>
+#include <WeatherData.h>
 #include <RouteGroupData.h>
 class MatrixDisplay {
     public:

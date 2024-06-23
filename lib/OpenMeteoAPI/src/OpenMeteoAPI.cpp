@@ -11,9 +11,8 @@ OpenMeteoAPI::OpenMeteoAPI(WiFiClientSecure* wifiClient, HTTPClient* httpClient)
     _httpClient = httpClient;
 }
 
-WeatherData OpenMeteoAPI::fetchCurrentWeather(const uint8_t clockHour, bool commuteMode) {
-    WeatherData result;
-    result.setCorrectly = true;
+void OpenMeteoAPI::fetchCurrentWeather(WeatherData& weatherData, const uint8_t clockHour, bool commuteMode) {
+    weatherData.clear();
     _httpClient->begin(*_wifiClient, OPEN_METEO_API_FORECAST);
     int tries = OPEN_METEO_API_ENDPOINT_TRIES;
     int httpCode = -1;
@@ -29,21 +28,21 @@ WeatherData OpenMeteoAPI::fetchCurrentWeather(const uint8_t clockHour, bool comm
         // serializeJsonPretty(doc, out);
         // Serial.println(out);
 
-        result.UVICurrent = doc["hourly"]["uv_index"][clockHour].as<uint8_t>();
+        weatherData.UVICurrent = doc["hourly"]["uv_index"][clockHour].as<uint8_t>();
         if(commuteMode) {
-            insertWeatherData(clockHour, doc, result);      // clockHour and
-            insertWeatherData(15, doc, result);             // 3pm
+            weatherData.weatherDataType = VickyCommuteForecast;
+            insertWeatherData(clockHour, doc, weatherData);      // clockHour and
+            insertWeatherData(15, doc, weatherData);             // 3pm
         } else {
-            insertWeatherData(clockHour, doc, result);      // clockHour + 2 hours in the future
-            insertWeatherData(clockHour+1, doc, result);
-            insertWeatherData(clockHour+2, doc, result);
+            weatherData.weatherDataType = ThreeHourForecast;
+            insertWeatherData(clockHour, doc, weatherData);      // clockHour + 2 hours in the future
+            insertWeatherData(clockHour+1, doc, weatherData);
+            insertWeatherData(clockHour+2, doc, weatherData);
         }
-    } else {
-        result.setCorrectly = false;
     }
     _httpClient->end();
 
-    if(!commuteMode && result.setCorrectly) {
+    if(!commuteMode) {
         _httpClient->begin(*_wifiClient, OPEN_METEO_API_AIR_QUALITY);
         int tries = OPEN_METEO_API_ENDPOINT_TRIES;
         int httpCode = -1;
@@ -58,17 +57,10 @@ WeatherData OpenMeteoAPI::fetchCurrentWeather(const uint8_t clockHour, bool comm
             // String out = "";
             // serializeJsonPretty(doc, out);
             // Serial.println(out);
-            result.AQICurrent = doc["current"]["us_aqi"].as<uint16_t>();
-        } else {
-            result.setCorrectly = false;
+            weatherData.AQICurrent = doc["current"]["us_aqi"].as<uint16_t>();
         }
         _httpClient->end();
     }
-    
-
-
-
-    return result;
 }
 
 void OpenMeteoAPI::insertWeatherData(uint8_t currentHour, JsonDocument doc, WeatherData& result) {

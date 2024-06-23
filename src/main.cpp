@@ -2,6 +2,7 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
+#include <Preferences.h>
 
 #include <Config.h>
 #include <Model.h>
@@ -19,6 +20,7 @@ MatrixDisplay display;
 OCTranspoAPI octranspoAPI(&wifiClient, &httpClient);
 OpenMeteoAPI openMeteoAPI(&wifiClient, &httpClient);
 Hysteresis hysteresis;
+Preferences preferences;
 
 bool firstPage = true;
 uint8_t loadingRecheckAttempt = 0;
@@ -35,78 +37,84 @@ RouteGroupData routeGroupData;
 WeatherData weatherData;
 
 void FetchRoutes(void *pvParameters) {
-    Serial.println("FetchRoutes task started");
+    Serial.println("FetchRoutes task - Started");
     routeGroupData = octranspoAPI.fetchRouteGroup(appPageToRouteGroupType(appPage));
 
     if(routeGroupData.routeDestinations.size() == 0) {
-        #ifdef DEBUG
-        Serial.println("Warning: FetchRoutes task returned no trips!");
-        #endif
+        Serial.println("FetchRoutes task WARNING - fetchRouteGroup() returned no trips!");
         appState = NextPageErrorLoading;
     } else {
-        #ifdef DEBUG
         printTrips(routeGroupData);
-        #endif
         appState = NextPageLoaded;
     }
 
     if(firstPage)
         nextCheckMillis = currentMillis; // Force check now
-    Serial.println("FetchRoutes task finished");
+    Serial.println("FetchRoutes task - Finished");
     printHighWaterMarkForTask(taskHandle);
     vTaskDelete(NULL);
 }
 
 void FetchWeather(void *pvParameters) {
-    Serial.println("FetchWeather task started");
-    weatherData = openMeteoAPI.fetchCurrentWeather(currentHourOfDay(), false);
+    Serial.println("FetchWeather task - Started");
 
-    if(!weatherData.setCorrectly) {
-        #ifdef DEBUG
-        Serial.println("Warning: FetchWeather task returned no data!");
-        #endif
-        appState = NextPageErrorLoading;
+    if(weatherData.isStaleOrInvalid(ThreeHourForecast)) {
+        // Re-fetch weather data
+         openMeteoAPI.fetchCurrentWeather(weatherData, currentHourOfDay(), false);
+     
+        if(weatherData.isStaleOrInvalid(ThreeHourForecast)) {
+            Serial.println("FetchWeather task WARNING - fetchCurrentWeather() returned no data!");
+            appState = NextPageErrorLoading;
+        } else {
+            Serial.println("FetchWeather task - Saving weatherData to FLASH");
+            weatherData.saveWeatherDataToFlash(preferences);
+            appState = NextPageLoaded;
+        }
     } else {
+        Serial.println("FetchWeather task - WeatherData is good still.");
         appState = NextPageLoaded;
     }
 
     if(firstPage)
         nextCheckMillis = currentMillis; // Force check now
-    Serial.println("FetchWeather task finished");
+    Serial.println("FetchWeather task - Finished");
     printHighWaterMarkForTask(taskHandle);
     vTaskDelete(NULL);
 }
 
 void FetchCommute(void *pvParameters) {
-    Serial.println("FetchCommute task started");
+    Serial.println("FetchCommute task - Started");
 
-    routeGroupData = octranspoAPI.fetchRouteGroup(VickyCommute);
-    uint8_t currentHour = currentHourOfDay();
-    if(weatherData.times.size() == 0 || 
-            weatherData.setCorrectly == false ||
-            weatherData.times.size() != 2 ||
-            currentHour != weatherData.times[0]) {
+    if(weatherData.isStaleOrInvalid(VickyCommuteForecast)) {
         // Re-fetch weather data
-        weatherData = openMeteoAPI.fetchCurrentWeather(currentHour, true);
+        openMeteoAPI.fetchCurrentWeather(weatherData, currentHourOfDay(), true);
 
-    }
-    appState = NextPageLoaded;
-    
-    if(!weatherData.setCorrectly) {
-        Serial.println("Warning: FetchWeather task returned no data!");
-        appState = NextPageErrorLoading;
-    }
-
-    if(routeGroupData.routeDestinations.size() == 0) {
-        Serial.println("Warning: FetchRoutes task returned no trips!");
-        appState = NextPageErrorLoading;
+        if(weatherData.isStaleOrInvalid(VickyCommuteForecast)) {
+            Serial.println("FetchCommute task WARNING - fetchCurrentWeather() returned no data!");
+            appState = NextPageErrorLoading;
+        } else {
+            Serial.println("FetchCommute task - Saving weatherData to FLASH");
+            weatherData.saveWeatherDataToFlash(preferences);
+            appState = NextPageLoaded;
+        }
     } else {
-        printTrips(routeGroupData);
+        Serial.println("FetchCommute task - WeatherData is good still.");
+        appState = NextPageLoaded;
+    }
+
+    if(appState == NextPageLoaded) {
+        routeGroupData = octranspoAPI.fetchRouteGroup(VickyCommute);
+        if(routeGroupData.routeDestinations.size() == 0) {
+            Serial.println("FetchCommute task WARNING - fetchRouteGroup() returned no trips!");
+            appState = NextPageErrorLoading;
+        } else {
+            printTrips(routeGroupData);
+        }
     }
 
     if(firstPage)
         nextCheckMillis = currentMillis; // Force check now
-    Serial.println("FetchCommute task finished");
+    Serial.println("FetchCommute task - Finished");
     printHighWaterMarkForTask(taskHandle);
     vTaskDelete(NULL);
 }
@@ -149,7 +157,7 @@ void checkAppStateAndContinueFromThere() {
                 Serial.println(xPortGetFreeHeapSize());
             } else {
                 Serial.print("ERROR: Task creation failed!!!");
-            }
+            }           
         }
     } else if(appState == Sleeping) {
         Serial.println("Sleeping now");
@@ -177,7 +185,7 @@ void setup() {
     Serial.println("\n\n     SMART LED MATRIX DISPLAY");
     Serial.println("-----------------------------------");
     Serial.println("-----------------------------------");
-    
+
     // Display
     display.begin(R1_PIN, G1_PIN, B1_PIN, R2_PIN, G2_PIN, B2_PIN, A_PIN, B_PIN, C_PIN, D_PIN, E_PIN, LAT_PIN, OE_PIN, CLK_PIN, PANEL_RES_X, PANEL_RES_Y, PANEL_CHAIN);
 
@@ -224,6 +232,19 @@ void setup() {
     currentDateFull(timeStringBuff, sizeof(timeStringBuff));
     Serial.print("  > Time is ");
     Serial.println(timeStringBuff);
+    
+    // Load Weather data from flash, if not stale.
+    Serial.print("Grabbing WeatherData from flash");
+    preferences.begin("app", false);
+    // preferences.clear();
+    weatherData.tryLoadWeatherDataFromFlash(preferences);
+    Serial.println("DONE.");
+    if(weatherData.times.size() > 0) {
+        Serial.println("  > WeatherData loaded successfully");
+    } else {
+        Serial.println("  > WeatherData NOT loaded");
+    }
+    
     Serial.println("--------------------------------------");
     Serial.println("\n\nSTARTING:");
     
