@@ -24,6 +24,7 @@ class MatrixDisplay {
                uint16_t panel_res_y,
                int8_t panel_chain);
 
+        void testDrawWeatherIcons();
         void drawInitializationPage(uint8_t loadingBarWidthPixels);
         void drawVickyCommutePage(RouteGroupData& data, WeatherData& weatherData, const char* currentTime);
         void drawBusSchedulePage(RouteGroupData& data, RouteGroupType tripsType, const char* currentTime);
@@ -82,7 +83,7 @@ class MatrixDisplay {
         uint8_t drawTextEnd(uint8_t x, uint8_t y, const char* text, uint16_t color, const GFXfont *f);
         void drawRouteSign(RouteType type, uint8_t x, uint8_t y, uint8_t width, const char* text);
         void drawMinuteSymbol(uint8_t x, uint8_t y);
-        void drawVerticalBarChart(uint8_t x, uint8_t y, uint8_t width, uint8_t height, float percentComplete, uint16_t colorBorder, uint16_t colorBar);
+        void drawVerticalBar(uint8_t x, uint8_t y, uint8_t width, uint8_t fullHeight, uint8_t barHeight, uint16_t colorBar);
         void drawASCWWImage(int x, int y, int width, int height, const char* imageArray); // ASCWW = ArduinoSmartClockWithWeather
 
         String shortenRouteDestination(const String& label);
@@ -93,6 +94,8 @@ class MatrixDisplay {
         void fadeInScreen();
         static uint16_t colorWithIntensity(MatrixPanel_I2S_DMA* dma_display, uint8_t r, uint8_t g, uint8_t b, float fraction);
         uint16_t colorForUVIndex(uint8_t UVIndex);
+        uint8_t barHeightForUVIndex(uint8_t UVIndex);
         uint16_t colorForAQI(uint16_t AQI);
+        uint8_t barHeightForAQI(uint16_t AQI);
 };
 #endif

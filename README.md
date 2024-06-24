@@ -84,10 +84,12 @@ Which would be purple (red + blue)
 # APIS
 - https://api.octranspo1.com/ for obtaining Bus Schedule data.
 - https://open-meteo.com/en/docs for obtaining Weather data.
-
+- https://developer.accuweather.com for obtaining Weather data.
 
 # Libraries and other tools
 - Fantastic https://github.com/mrfaptastic/ESP32-HUB75-MatrixPanel-DMA for hooking up the LED Matrix display.
 - ArduinoJson https://arduinojson.org/
 - For converting images into C-style arrays https://javl.github.io/image2cpp/
 - Amazing image editor https://www.photopea.com/
+- Converting Android XML Vectors to SVGs https://shapeshifter.design/
+- Tool for disassembling APKs https://apktool.org/

@@ -13,14 +13,13 @@
 #include <OpenMeteoAPI.h>
 #include <Util.h>
 
-
+Preferences preferences;
 WiFiClientSecure wifiClient;
 HTTPClient httpClient;
 MatrixDisplay display;
 OCTranspoAPI octranspoAPI(&wifiClient, &httpClient);
 OpenMeteoAPI openMeteoAPI(&wifiClient, &httpClient);
 Hysteresis hysteresis;
-Preferences preferences;
 
 bool firstPage = true;
 uint8_t loadingRecheckAttempt = 0;
@@ -60,10 +59,10 @@ void FetchWeather(void *pvParameters) {
 
     if(weatherData.isStaleOrInvalid(ThreeHourForecast)) {
         // Re-fetch weather data
-         openMeteoAPI.fetchCurrentWeather(weatherData, currentHourOfDay(), false);
+         openMeteoAPI.fetchWeatherData(weatherData, currentHourOfDay(), false);
      
         if(weatherData.isStaleOrInvalid(ThreeHourForecast)) {
-            Serial.println("FetchWeather task WARNING - fetchCurrentWeather() returned no data!");
+            Serial.println("FetchWeather task WARNING - fetchWeatherData() returned no data!");
             appState = NextPageErrorLoading;
         } else {
             Serial.println("FetchWeather task - Saving weatherData to FLASH");
@@ -87,10 +86,10 @@ void FetchCommute(void *pvParameters) {
 
     if(weatherData.isStaleOrInvalid(VickyCommuteForecast)) {
         // Re-fetch weather data
-        openMeteoAPI.fetchCurrentWeather(weatherData, currentHourOfDay(), true);
+        openMeteoAPI.fetchWeatherData(weatherData, currentHourOfDay(), true);
 
         if(weatherData.isStaleOrInvalid(VickyCommuteForecast)) {
-            Serial.println("FetchCommute task WARNING - fetchCurrentWeather() returned no data!");
+            Serial.println("FetchCommute task WARNING - fetchWeatherData() returned no data!");
             appState = NextPageErrorLoading;
         } else {
             Serial.println("FetchCommute task - Saving weatherData to FLASH");
@@ -188,6 +187,7 @@ void setup() {
 
     // Display
     display.begin(R1_PIN, G1_PIN, B1_PIN, R2_PIN, G2_PIN, B2_PIN, A_PIN, B_PIN, C_PIN, D_PIN, E_PIN, LAT_PIN, OE_PIN, CLK_PIN, PANEL_RES_X, PANEL_RES_Y, PANEL_CHAIN);
+    // display.testDrawWeatherIcons(); while(true) {}
 
     // Hysteresis
     hysteresis.begin(4096, LIGHT_SENSOR_VALUE_MAX, LIGHT_SENSOR_VALUE_MIN, 
@@ -234,7 +234,7 @@ void setup() {
     Serial.println(timeStringBuff);
     
     // Load Weather data from flash, if not stale.
-    Serial.print("Grabbing WeatherData from flash");
+    Serial.print("Grabbing WeatherData from flash..");
     preferences.begin("app", false);
     // preferences.clear();
     weatherData.tryLoadWeatherDataFromFlash(preferences);

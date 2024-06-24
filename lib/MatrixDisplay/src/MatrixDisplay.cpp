@@ -4,7 +4,6 @@
 #include <Config.h>
 #include <Util.h>
 #include "MatrixDisplay.h"
-#include "images/images.h"
 #include "images/icons1BitPerPixel.h"
 #include "images/icons2BytePerPixel565.h"
 #include "fonts/Font5x5Fixed.h"
@@ -29,6 +28,54 @@ void MatrixDisplay::begin(int8_t r1_pin, int8_t g1_pin, int8_t b1_pin, int8_t r2
 
     xTaskCreatePinnedToCore(BrightnessTaskFunction, "BrightnessTaskFunction", 
         STACK_DEPTH_BRIGHTNESS_TASK, this, 1, &brightnessTaskHandle, 1);
+}
+
+void MatrixDisplay::testDrawWeatherIcons() {
+    clearScreen();
+    _dma_display->drawRGBBitmap(48-9-32, WEATHER_PAGE_WEATHER_ICON_POS_Y-10, weather_icon_1, 19, 19);
+    _dma_display->drawRGBBitmap(48-9, WEATHER_PAGE_WEATHER_ICON_POS_Y-10, weather_icon_2, 19, 19);
+    _dma_display->drawRGBBitmap(48-9+32, WEATHER_PAGE_WEATHER_ICON_POS_Y-10, weather_icon_3, 19, 19);
+    _dma_display->drawRGBBitmap(48-9+32+32, WEATHER_PAGE_WEATHER_ICON_POS_Y-10, weather_icon_4, 19, 19);
+    _dma_display->drawRGBBitmap(48-9-32, WEATHER_PAGE_WEATHER_ICON_POS_Y+15, weather_icon_5, 19, 19);
+    _dma_display->drawRGBBitmap(48-9, WEATHER_PAGE_WEATHER_ICON_POS_Y+15, weather_icon_6, 19, 19);
+    _dma_display->drawRGBBitmap(48-9+32, WEATHER_PAGE_WEATHER_ICON_POS_Y+15, weather_icon_7, 19, 19);
+    _dma_display->drawRGBBitmap(48-9+32+32, WEATHER_PAGE_WEATHER_ICON_POS_Y+15, weather_icon_8, 19, 19);
+
+    // _dma_display->drawRGBBitmap(48-9-32, WEATHER_PAGE_WEATHER_ICON_POS_Y-10, weather_icon_11, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9, WEATHER_PAGE_WEATHER_ICON_POS_Y-10, weather_icon_12, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9+32, WEATHER_PAGE_WEATHER_ICON_POS_Y-10, weather_icon_13, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9+32+32, WEATHER_PAGE_WEATHER_ICON_POS_Y-10, weather_icon_14, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9-32, WEATHER_PAGE_WEATHER_ICON_POS_Y+15, weather_icon_15, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9, WEATHER_PAGE_WEATHER_ICON_POS_Y+15, weather_icon_16, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9+32, WEATHER_PAGE_WEATHER_ICON_POS_Y+15, weather_icon_17, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9+32, WEATHER_PAGE_WEATHER_ICON_POS_Y+15, weather_icon_18, 19, 19);
+
+    // _dma_display->drawRGBBitmap(48-9-32, WEATHER_PAGE_WEATHER_ICON_POS_Y-10, weather_icon_19, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9, WEATHER_PAGE_WEATHER_ICON_POS_Y-10, weather_icon_20, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9+32, WEATHER_PAGE_WEATHER_ICON_POS_Y-10, weather_icon_21, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9+32+32, WEATHER_PAGE_WEATHER_ICON_POS_Y-10, weather_icon_22, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9-32, WEATHER_PAGE_WEATHER_ICON_POS_Y+15, weather_icon_23, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9, WEATHER_PAGE_WEATHER_ICON_POS_Y+15, weather_icon_24, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9+32, WEATHER_PAGE_WEATHER_ICON_POS_Y+15, weather_icon_25, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9+32, WEATHER_PAGE_WEATHER_ICON_POS_Y+15, weather_icon_26, 19, 19);
+
+    // _dma_display->drawRGBBitmap(48-9-32, WEATHER_PAGE_WEATHER_ICON_POS_Y-10, weather_icon_29, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9, WEATHER_PAGE_WEATHER_ICON_POS_Y-10, weather_icon_30, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9+32, WEATHER_PAGE_WEATHER_ICON_POS_Y-10, weather_icon_31, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9+32+32, WEATHER_PAGE_WEATHER_ICON_POS_Y-10, weather_icon_32, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9-32, WEATHER_PAGE_WEATHER_ICON_POS_Y+15, weather_icon_33, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9, WEATHER_PAGE_WEATHER_ICON_POS_Y+15, weather_icon_34, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9+32, WEATHER_PAGE_WEATHER_ICON_POS_Y+15, weather_icon_35, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9+32, WEATHER_PAGE_WEATHER_ICON_POS_Y+15, weather_icon_36, 19, 19);
+
+    // _dma_display->drawRGBBitmap(48-9-32, WEATHER_PAGE_WEATHER_ICON_POS_Y-10, weather_icon_37, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9, WEATHER_PAGE_WEATHER_ICON_POS_Y-10, weather_icon_38, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9+32, WEATHER_PAGE_WEATHER_ICON_POS_Y-10, weather_icon_39, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9+32+32, WEATHER_PAGE_WEATHER_ICON_POS_Y-10, weather_icon_40, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9-32, WEATHER_PAGE_WEATHER_ICON_POS_Y+15, weather_icon_41, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9, WEATHER_PAGE_WEATHER_ICON_POS_Y+15, weather_icon_42, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9+32, WEATHER_PAGE_WEATHER_ICON_POS_Y+15, weather_icon_43, 19, 19);
+    // _dma_display->drawRGBBitmap(48-9+32, WEATHER_PAGE_WEATHER_ICON_POS_Y+15, weather_icon_44, 19, 19);
 }
 
 void MatrixDisplay::drawInitializationPage(uint8_t loadingBarWidthPixels) {
@@ -115,19 +162,15 @@ void MatrixDisplay::drawVickyCommutePage(RouteGroupData& data, WeatherData& weat
             String hourPretty = hourNumericToPretty(weatherData.times.at(i));
             drawText(xPos + VICKY_COMMUTE_PAGE_TIME_LEFT_SPACING_X, VICKY_COMMUTE_PAGE_TIME_Y, hourPretty.c_str(), _colorTextPrimary, &Font5x5Fixed);
             
-            const char* weatherImage = weatherTypeToImage(weatherData.weatherType.at(i), weatherData.isDaytime.at(i));
+            const uint16_t* weatherImage = weatherIconToImage(weatherData.weatherIcons.at(i));
             if(weatherImage != NULL)
-                drawASCWWImage(xPos+VICKY_COMMUTE_PAGE_ICON_LEFT_SPACING_X-12, VICKY_COMMUTE_PAGE_ICON_Y, 25, 25, weatherImage);
+                _dma_display->drawRGBBitmap(xPos+VICKY_COMMUTE_PAGE_ICON_LEFT_SPACING_X-9, VICKY_COMMUTE_PAGE_ICON_Y, weatherImage, 19, 19);
             else {
-                Serial.print("Warning: weatherTypeToImage() returned NULL for weatherType= ");
-                Serial.print(weatherData.weatherType.at(i));
-                Serial.print(" daytime=");
-                Serial.println(weatherData.weatherType.at(i));
+                Serial.print("Warning: weatherIconToImage() returned NULL for weatherIcon= ");
+                Serial.print(weatherData.weatherIcons.at(i));
             }
 
-            drawCenteredText(xPos+VICKY_COMMUTE_PAGE_ICON_LEFT_SPACING_X, VICKY_COMMUTE_PAGE_APPARENT_TEMP_Y, weatherData.apparentTemperatureCelcius.at(i).c_str(), _colorTextPrimary, &Font5x5Fixed);
-            
-
+            drawCenteredText(xPos+VICKY_COMMUTE_PAGE_ICON_LEFT_SPACING_X, VICKY_COMMUTE_PAGE_APPARENT_TEMP_Y, weatherData.apparentTemperaturesCelcius.at(i).c_str(), _colorTextPrimary, &Font5x5Fixed);
             xPos=xPos+64;
         }
     } else {
@@ -229,8 +272,12 @@ void MatrixDisplay::drawWeatherPage(WeatherData& weatherData, const char* curren
     fadeOutScreen();
     clearScreen();
 
+    // Draw icon
+    _dma_display->drawRGBBitmap(SCHEDULE_ICON_X_POSITION, SCHEDULE_ICON_Y_POSITION, icon_Accuweather, 9, 9);
+
     // Draw Title
-    drawText(WEATHER_PAGE_TITLE_X_POSITION, WEATHER_PAGE_TITLE_Y_POSITION, currentDateShort);
+    drawText(SCHEDULE_TITLE_X_POSITION, SCHEDULE_TITLE_Y_POSITION, "Accuweather");
+    // drawText(WEATHER_PAGE_TITLE_X_POSITION, WEATHER_PAGE_TITLE_Y_POSITION, currentDateShort);
 
     // Draw clock
     drawTextEnd(PAGE_CLOCK_X_POSITION, PAGE_CLOCK_Y_POSITION, currentTime, _colorTextPrimary, &Font5x7Fixed);
@@ -247,24 +294,23 @@ void MatrixDisplay::drawWeatherPage(WeatherData& weatherData, const char* curren
     // UV index and AQI
     _dma_display->fillRoundRect(3, 15, 27, 28, 3, _colorTextSecondary);
     drawText(5, 40, "UV", _colorTextPrimary, &Font5x5Fixed);
-    drawText(19, 40, "AQ", _colorTextPrimary, &Font5x5Fixed);
-    drawVerticalBarChart(8, 17, 5, 17, (float)weatherData.UVICurrent/11, _colorTextSecondary, colorForUVIndex(weatherData.UVICurrent));
-    drawVerticalBarChart(20, 17, 5, 17, (float)weatherData.AQICurrent/500, _colorTextSecondary, colorForAQI(weatherData.AQICurrent));
-
+    drawText(19, 40, "AQ", _colorTextPrimary, &Font5x5Fixed);    
+    drawVerticalBar(9, 18, 3, 15, barHeightForUVIndex(weatherData.UVICurrent), colorForUVIndex(weatherData.UVICurrent));
+    drawVerticalBar(21, 18, 3, 15, barHeightForAQI(weatherData.AQICurrent), colorForAQI(weatherData.AQICurrent));
+    
     uint8_t xPos = 48;
     for (size_t i = 0; i < weatherData.times.size(); ++i) {
         String hourPretty = hourNumericToPretty(weatherData.times.at(i));
         drawCenteredText(xPos, WEATHER_PAGE_TIME_POS_Y, hourPretty.c_str(), _colorTextPrimary, &Font5x5Fixed);
-        const char* weatherImage = weatherTypeToImage(weatherData.weatherType.at(i), weatherData.isDaytime.at(i));
+        const uint16_t* weatherImage = weatherIconToImage(weatherData.weatherIcons.at(i));
 
-        if(weatherImage != NULL)
-            drawASCWWImage(xPos-12, WEATHER_PAGE_WEATHER_ICON_POS_Y, 25, 25, weatherImage);
-        else {
-            drawCenteredText(xPos, WEATHER_PAGE_TIME_POS_Y + 10, "ERR", _colorTextSecondary, &Font5x5Fixed);
-            Serial.print("Warning: weatherTypeToImage() returned NULL for weatherType= ");
-            Serial.print(weatherData.weatherType.at(i));
-            Serial.print(" daytime=");
-            Serial.println(weatherData.weatherType.at(i));
+        if(weatherImage != NULL) {
+            _dma_display->drawRGBBitmap(xPos-9, WEATHER_PAGE_WEATHER_ICON_POS_Y, weatherImage, 19, 19);
+        } else {
+            drawCenteredText(xPos, WEATHER_PAGE_TIME_POS_Y + 10, "ERR", _colorRed, &Font5x5Fixed);
+            drawCenteredText(xPos, WEATHER_PAGE_TIME_POS_Y + 18, String(weatherData.weatherIcons.at(i)).c_str(), _colorRed, &Font5x5Fixed);
+            Serial.print("Warning: weatherIconToImage() returned NULL for weatherIcon= ");
+            Serial.print(weatherData.weatherIcons.at(i));
         }
 
         xPos=xPos+32;
@@ -453,8 +499,8 @@ void MatrixDisplay::ExtraWeatherDataTaskFunction(void *pvParameters) {
                 instance->drawCenteredText(16, WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_Y, "Temp", color, &Font5x5Fixed);
                 instance->drawCenteredText(16, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_Y, "Feel", color, &Font5x5Fixed);
                 for (size_t i = 0; i < weatherData.times.size(); ++i) {
-                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_Y, weatherData.temperatureCelcius.at(i).c_str(), color, &Font5x5Fixed);
-                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_Y, weatherData.apparentTemperatureCelcius.at(i).c_str(), color, &Font5x5Fixed);
+                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_Y, weatherData.temperaturesCelcius.at(i).c_str(), color, &Font5x5Fixed);
+                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_Y, weatherData.apparentTemperaturesCelcius.at(i).c_str(), color, &Font5x5Fixed);
                     xPos=xPos+32;
                 }
                 break;
@@ -463,8 +509,8 @@ void MatrixDisplay::ExtraWeatherDataTaskFunction(void *pvParameters) {
                 instance->drawCenteredText(16, WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_Y, "Humidity", color, &Font5x5Fixed);
                 instance->drawCenteredText(16, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_Y, "Wind", color, &Font5x5Fixed);
                 for (size_t i = 0; i < weatherData.times.size(); ++i) {
-                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_Y, weatherData.relativeHumidity.at(i).c_str(), color, &Font5x5Fixed);
-                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_Y, weatherData.windSpeed.at(i).c_str(), color, &Font5x5Fixed);
+                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_Y, weatherData.relativeHumidities.at(i).c_str(), color, &Font5x5Fixed);
+                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_Y, weatherData.windSpeeds.at(i).c_str(), color, &Font5x5Fixed);
                     xPos=xPos+32;
                 }
                 break;
@@ -473,8 +519,8 @@ void MatrixDisplay::ExtraWeatherDataTaskFunction(void *pvParameters) {
                 instance->drawCenteredText(16, WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_Y, "Rain %", color, &Font5x5Fixed);
                 instance->drawCenteredText(16, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_Y, "Rain", color, &Font5x5Fixed);
                 for (size_t i = 0; i < weatherData.times.size(); ++i) {
-                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_Y, weatherData.precipitationProbability.at(i).c_str(), color, &Font5x5Fixed);
-                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_Y, weatherData.precipitation.at(i).c_str(), color, &Font5x5Fixed);
+                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_FIRST_Y, weatherData.precipitationProbabilities.at(i).c_str(), color, &Font5x5Fixed);
+                    instance->drawCenteredText(xPos, WEATHER_PAGE_EXTRA_WEATHER_DATA_SECOND_Y, weatherData.precipitationAmounts.at(i).c_str(), color, &Font5x5Fixed);
                     xPos=xPos+32;
                 }
                 break;
@@ -528,8 +574,8 @@ void MatrixDisplay::ExtraWeatherDataVickyCommuteTaskFunction(void *pvParameters)
             case 0:
                 for (size_t i = 0; i < weatherData.times.size(); ++i) {
                     instance->drawText(xPos, VICKY_COMMUTE_PAGE_EXTRA_FIRST_Y, "Air", color, &Font5x5Fixed);
-                    instance->drawText(xPos, VICKY_COMMUTE_PAGE_EXTRA_SECOND_Y, weatherData.relativeHumidity.at(i).c_str(), color, &Font5x5Fixed);
-                    instance->drawText(xPos, VICKY_COMMUTE_PAGE_EXTRA_THIRD_Y, weatherData.windSpeed.at(i).c_str(), color, &Font5x5Fixed);
+                    instance->drawText(xPos, VICKY_COMMUTE_PAGE_EXTRA_SECOND_Y, weatherData.relativeHumidities.at(i).c_str(), color, &Font5x5Fixed);
+                    instance->drawText(xPos, VICKY_COMMUTE_PAGE_EXTRA_THIRD_Y, weatherData.windSpeeds.at(i).c_str(), color, &Font5x5Fixed);
                     xPos=xPos+64;
                 }
                 break;
@@ -537,8 +583,8 @@ void MatrixDisplay::ExtraWeatherDataVickyCommuteTaskFunction(void *pvParameters)
             case 1:
                 for (size_t i = 0; i < weatherData.times.size(); ++i) {
                     instance->drawText(xPos, VICKY_COMMUTE_PAGE_EXTRA_FIRST_Y, "Rain", color, &Font5x5Fixed);
-                    instance->drawText(xPos, VICKY_COMMUTE_PAGE_EXTRA_SECOND_Y, weatherData.precipitationProbability.at(i).c_str(), color, &Font5x5Fixed);
-                    instance->drawText(xPos, VICKY_COMMUTE_PAGE_EXTRA_THIRD_Y, weatherData.precipitation.at(i).c_str(), color, &Font5x5Fixed);
+                    instance->drawText(xPos, VICKY_COMMUTE_PAGE_EXTRA_SECOND_Y, weatherData.precipitationProbabilities.at(i).c_str(), color, &Font5x5Fixed);
+                    instance->drawText(xPos, VICKY_COMMUTE_PAGE_EXTRA_THIRD_Y, weatherData.precipitationAmounts.at(i).c_str(), color, &Font5x5Fixed);
                     xPos=xPos+64;
                 }
                 break;
@@ -751,25 +797,8 @@ void MatrixDisplay::drawMinuteSymbol(uint8_t x, uint8_t y) {
     _dma_display->drawLine(x, y, x, y+2, _colorTextPrimary);
 }
 
-void MatrixDisplay::drawVerticalBarChart(uint8_t x, uint8_t y, uint8_t width, uint8_t height, float percentComplete, uint16_t colorBorder, uint16_t colorBar) {
-    _dma_display->drawRect(x, y, width, height, colorBorder);
-    uint8_t barFullHeight = height-2;
-    uint8_t barActualHeight = (float)barFullHeight * percentComplete;
-    if(barActualHeight == 0)
-        barActualHeight = 2;
-    if(barActualHeight > barFullHeight)
-        barActualHeight = barFullHeight;
-
-    // Serial.print("percentComplete ");
-    // Serial.print(percentComplete);
-    // Serial.print(" barFullHeight ");
-    // Serial.print(barFullHeight);
-    // Serial.print(" barActualHeight ");
-    // Serial.println(barActualHeight);
-    // Serial.print(" mathy ");
-    // Serial.println(y + 1 + barFullHeight - barActualHeight);
-
-    _dma_display->fillRect(x+1, y + 1 + barFullHeight - barActualHeight, width-2, barActualHeight, colorBar);
+void MatrixDisplay::drawVerticalBar(uint8_t x, uint8_t y, uint8_t width, uint8_t fullHeight, uint8_t barHeight, uint16_t colorBar) {
+    _dma_display->fillRect(x, y + fullHeight - barHeight, width, barHeight, colorBar);
 }
 
 void MatrixDisplay::drawASCWWImage(int x, int y, int width, int height, const char* imageArray) {
@@ -875,6 +904,20 @@ uint16_t MatrixDisplay::colorForUVIndex(uint8_t UVIndex){
         return _colorExtreme;
 }
 
+uint8_t MatrixDisplay::barHeightForUVIndex(uint8_t UVIndex) {
+    uint8_t div = WEATHER_PAGE_VERTICAL_BAR_HEIGHT_MAX/5;
+    if(UVIndex <= 2)
+        return div;
+    else if(UVIndex <= 5)
+        return div*2;
+    else if(UVIndex <= 7)
+        return div*3;
+    else if(UVIndex <= 10)
+        return div*4;
+    else 
+        return div*5;
+}
+
 uint16_t MatrixDisplay::colorForAQI(uint16_t AQI){
     if(AQI <= 50)
         return _colorLow;
@@ -888,4 +931,20 @@ uint16_t MatrixDisplay::colorForAQI(uint16_t AQI){
         return _colorExtreme;
     else
         return _colorHazardous;
+}
+
+uint8_t MatrixDisplay::barHeightForAQI(uint16_t AQI) {
+    uint8_t div = WEATHER_PAGE_VERTICAL_BAR_HEIGHT_MAX/5;
+    if(AQI <= 50)
+        return div;
+    else if(AQI <= 100)
+        return div*2;
+    else if(AQI <= 150)
+        return div*3;
+    else if(AQI <= 200)
+        return div*4;
+    else if(AQI <= 300)
+        return div*5;
+    else 
+        return div*5;
 }
