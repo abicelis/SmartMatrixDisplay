@@ -62,6 +62,7 @@ void FetchWeather(void *pvParameters) {
          openMeteoAPI.fetchWeatherData(weatherData, currentHourOfDay(), false);
      
         if(weatherData.isStaleOrInvalid(ThreeHourForecast)) {
+            weatherData.clearWeatherDataFromFlash(preferences);
             Serial.println("FetchWeather task WARNING - fetchWeatherData() returned no data!");
             appState = NextPageErrorLoading;
         } else {
@@ -89,6 +90,7 @@ void FetchCommute(void *pvParameters) {
         openMeteoAPI.fetchWeatherData(weatherData, currentHourOfDay(), true);
 
         if(weatherData.isStaleOrInvalid(VickyCommuteForecast)) {
+            weatherData.clearWeatherDataFromFlash(preferences);
             Serial.println("FetchCommute task WARNING - fetchWeatherData() returned no data!");
             appState = NextPageErrorLoading;
         } else {
@@ -233,7 +235,7 @@ void setup() {
     Serial.print("  > Time is ");
     Serial.println(timeStringBuff);
     
-    // Load Weather data from flash, if not stale.
+    // Load Weather data from flash.
     Serial.print("Grabbing WeatherData from flash..");
     preferences.begin("app", false);
     // preferences.clear();

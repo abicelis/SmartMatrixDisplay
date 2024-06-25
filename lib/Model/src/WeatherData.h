@@ -25,6 +25,7 @@ public:
     void clear();
     bool isStaleOrInvalid(WeatherDataType requiredWeatherDataType);
     
+    void clearWeatherDataFromFlash(Preferences& preferences);
     void tryLoadWeatherDataFromFlash(Preferences& preferences);
     void saveWeatherDataToFlash(Preferences& preferences);
 

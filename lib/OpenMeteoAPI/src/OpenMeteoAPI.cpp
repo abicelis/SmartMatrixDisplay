@@ -13,7 +13,6 @@ OpenMeteoAPI::OpenMeteoAPI(WiFiClientSecure* wifiClient, HTTPClient* httpClient)
 
 void OpenMeteoAPI::fetchWeatherData(WeatherData& weatherData, const uint8_t clockHour, bool commuteMode) {
     weatherData.clear();
-
     if(commuteMode)
         weatherData.weatherDataType = VickyCommuteForecast;
     else
@@ -39,10 +38,13 @@ void OpenMeteoAPI::fetchWeatherData(WeatherData& weatherData, const uint8_t cloc
 
         weatherData.UVICurrent = currentConditions["UVIndex"].as<uint8_t>();
         insertWeatherData(currentConditions, weatherData, clockHour, true);
+        _httpClient->end();
+    } else {
+        _httpClient->end();
+        weatherData.clear();
+        return;
     }
-    _httpClient->end();
-
-
+    
     _httpClient->begin(*_wifiClient, ACCUWEATHER_API_12H_FORECAST);
     int tries2 = ACCUWEATHER_API_ENDPOINT_TRIES;
     int httpCode2 = -1;
@@ -66,9 +68,12 @@ void OpenMeteoAPI::fetchWeatherData(WeatherData& weatherData, const uint8_t cloc
             insertWeatherData(doc[0].as<JsonVariant>(), weatherData, clockHour+1, false);
             insertWeatherData(doc[1].as<JsonVariant>(), weatherData, clockHour+2, false);
         }
-        
+        _httpClient->end();
+    } else {
+        _httpClient->end();
+        weatherData.clear();
+        return;
     }
-    _httpClient->end();
 
 
     if(!commuteMode) {

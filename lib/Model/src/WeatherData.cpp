@@ -2,6 +2,11 @@
 #include "WeatherData.h"
 #include "Util.h"
 
+void WeatherData::clearWeatherDataFromFlash(Preferences& preferences) {
+    preferences.remove("weatherDataDOM");
+    preferences.remove("weatherData");
+}
+
 void WeatherData::tryLoadWeatherDataFromFlash(Preferences& preferences) {
     clear();
     if(currentDayOfMonth() != preferences.getUInt("weatherDataDOM"))
@@ -112,6 +117,7 @@ void WeatherData::saveWeatherDataToFlash(Preferences& preferences) {
         preferences.putUInt("weatherDataDOM", currentDayOfMonth());
 
     } catch (const char* e) {
+        Serial.println("EXCEPTION SAVING WEATHERDATA");
         return;
     }
 }
