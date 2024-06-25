@@ -3,8 +3,12 @@
 #include "Util.h"
 
 void WeatherData::clearWeatherDataFromFlash(Preferences& preferences) {
-    preferences.remove("weatherDataDOM");
-    preferences.remove("weatherData");
+    try {
+        preferences.remove("weatherDataDOM");
+    } catch (const char* e) {}
+    try {
+        preferences.remove("weatherData");
+    } catch (const char* e) {}
 }
 
 void WeatherData::tryLoadWeatherDataFromFlash(Preferences& preferences) {

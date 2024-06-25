@@ -52,7 +52,7 @@ void OpenMeteoAPI::fetchWeatherData(WeatherData& weatherData, const uint8_t cloc
         httpCode2 = _httpClient->GET();
         tries2--;
     }
-    if(httpCode == 200) {
+    if(httpCode2 == 200) {
         JsonDocument doc;
         deserializeJson(doc, _httpClient->getStream());
         // deserializeJson(doc, mockJsonAccuweatherForecast12h);
@@ -108,18 +108,18 @@ void OpenMeteoAPI::insertWeatherData(JsonDocument doc, WeatherData& weatherData,
     weatherData.weatherIcons.push_back(doc["WeatherIcon"].as<uint8_t>());
     
     if(jsonIsCurrentAPI) {
-        weatherData.temperaturesCelcius.push_back(            doc["Temperature"]["Metric"]["Value"].as<String>() + String("°"));
-        weatherData.apparentTemperaturesCelcius.push_back(    doc["RealFeelTemperature"]["Metric"]["Value"].as<String>() + String("°"));
+        weatherData.temperaturesCelcius.push_back(            String((int)round(doc["Temperature"]["Metric"]["Value"].as<float>())) + String("°"));
+        weatherData.apparentTemperaturesCelcius.push_back(    String((int)round(doc["RealFeelTemperature"]["Metric"]["Value"].as<float>())) + String("°"));
         weatherData.relativeHumidities.push_back(             doc["RelativeHumidity"].as<String>() + String("%"));
-        weatherData.windSpeeds.push_back(                     String(doc["Wind"]["Speed"]["Metric"]["Value"].as<float>(), 1) + String("Kmh"));
-        weatherData.precipitationProbabilities.push_back(     String( (doc["HasPrecipitation"].as<boolean>()) ? "100%" : "0%" ));
-        weatherData.precipitationAmounts.push_back            (String(doc["Precip1hr"]["Metric"]["Value"].as<float>(), 1) + String("mm"));
+        weatherData.windSpeeds.push_back(                     String((int)round(doc["Wind"]["Speed"]["Metric"]["Value"].as<float>())) + String("Kmh"));
+        weatherData.precipitationProbabilities.push_back(     String((doc["HasPrecipitation"].as<boolean>()) ? "100%" : "0%" ));
+        weatherData.precipitationAmounts.push_back            (String((int)round(doc["Precip1hr"]["Metric"]["Value"].as<float>())) + String("mm"));
     } else {
-        weatherData.temperaturesCelcius.push_back(            doc["Temperature"]["Value"].as<String>() + String("°"));
-        weatherData.apparentTemperaturesCelcius.push_back(    doc["RealFeelTemperature"]["Value"].as<String>() + String("°"));
+        weatherData.temperaturesCelcius.push_back(            String((int)round(doc["Temperature"]["Value"].as<float>())) + String("°"));
+        weatherData.apparentTemperaturesCelcius.push_back(    String((int)round(doc["RealFeelTemperature"]["Value"].as<float>())) + String("°"));
         weatherData.relativeHumidities.push_back(             doc["RelativeHumidity"].as<String>() + String("%"));
-        weatherData.windSpeeds.push_back(                     String(doc["Wind"]["Speed"]["Value"].as<float>(), 1) + String("Kmh"));
-        weatherData.precipitationProbabilities.push_back(     String(doc["PrecipitationProbability"].as<float>(), 1) + String("%"));
-        weatherData.precipitationAmounts.push_back            (String(doc["TotalLiquid"]["Value"].as<float>(), 1) + String("mm"));
+        weatherData.windSpeeds.push_back(                     String((int)round(doc["Wind"]["Speed"]["Value"].as<float>())) + String("Kmh"));
+        weatherData.precipitationProbabilities.push_back(     String((int)round(doc["PrecipitationProbability"].as<float>())) + String("%"));
+        weatherData.precipitationAmounts.push_back(           String((int)round(doc["TotalLiquid"]["Value"].as<float>())) + String("mm"));
     }
 }
