@@ -32,10 +32,8 @@ RouteGroupData OCTranspoAPI::fetchRouteGroup(RouteGroupType type) {
 
 void OCTranspoAPI::fetchTripsFor(RouteGroupData& data, const String& stopNo, const String& routeNo) {
     delay(500); // Delay a bit?
-    
-    #ifdef DEBUG
+
     Serial.println("fetchTripsFor Stop#" + stopNo + " Route#"+ routeNo);
-    #endif
     String endpoint = String(OCTRANSPO_API_NEXT_TRIPS_FOR_STOP_ENDPOINT);
     endpoint += "&stopNo=" + stopNo + "&routeNo=" + routeNo;
 
@@ -43,49 +41,48 @@ void OCTranspoAPI::fetchTripsFor(RouteGroupData& data, const String& stopNo, con
     int httpCode = _httpClient->GET();
 
     if(httpCode != 200) {
-        #ifdef DEBUG
         Serial.println("Warning: OC transpo endpoint returned " + String(httpCode));
-        #endif
     } else {
         JsonDocument doc;
         deserializeJson(doc, _httpClient->getStream());
 
-        // String out = "";
-        // serializeJsonPretty(doc, out);
-        // Serial.println(out);
+        // Validate that OC transpo's response is valid JSON.
+        // June 26th, 2024: 
+        //  - OC Server went down. Endpoints returned HTTP 200 OK but instead of JSON
+        //    we got "<h4>A PHP Error was encountered</h4>" HTML nonsense!
+        if(doc.containsKey("GetNextTripsForStopResult")) {
+            String routeNumber = doc["GetNextTripsForStopResult"]["Route"]["RouteDirection"]["RouteNo"];
+            JsonArray trips = doc["GetNextTripsForStopResult"]["Route"]["RouteDirection"]["Trips"]["Trip"];
+            for (JsonObject trip: trips) {
+                // String out = "";
+                // serializeJsonPretty(trip, out);
+                // Serial.println(out);
+                int arrivalTime = trip["AdjustedScheduleTime"].as<int>();
+                if(arrivalTime > OCTRANSPO_API_MAX_ARRIVAL_TIME_MINUTES || arrivalTime < OCTRANSPO_API_MIN_ARRIVAL_TIME_MINUTES) {
+                    // Serial.print("Removed trip with extreme arrivalTime = ");
+                    // Serial.println(arrivalTime);
+                    continue;
+                }
+                arrivalTime -= OCTRANSPO_API_MINUTES_TO_SUBTRACT_FROM_ARRIVAL_TIME;
+                String routeDestination = trip["TripDestination"];
+                bool arrivalIsEstimated = trip["AdjustmentAge"].as<float>() != -1 && trip["Longitude"] != "";
 
-        String routeNumber = doc["GetNextTripsForStopResult"]["Route"]["RouteDirection"]["RouteNo"];
-        JsonArray trips = doc["GetNextTripsForStopResult"]["Route"]["RouteDirection"]["Trips"]["Trip"];
-        for (JsonObject trip: trips) {
-            // String out = "";
-            // serializeJsonPretty(trip, out);
-            // Serial.println(out);
-            int arrivalTime = trip["AdjustedScheduleTime"].as<int>();
-            if(arrivalTime > OCTRANSPO_API_MAX_ARRIVAL_TIME_MINUTES || arrivalTime < OCTRANSPO_API_MIN_ARRIVAL_TIME_MINUTES) {
-                // Serial.print("Removed trip with extreme arrivalTime = ");
-                // Serial.println(arrivalTime);
-                continue;
+                BusLocation busLocation = None;
+                if(routeNo == "88" && stopNo == "4483" && arrivalIsEstimated) {
+                    busLocation = TooClose;
+                    if(trip["Longitude"].as<float>() < OCTRANSPO_API_88_HURDMAN_LONGITUDE_THRESHOLD_BUS_FAR_ENOUGH_AWAY)
+                        busLocation = FarAwayEnough;
+                }
+                
+                addTrip(data, routeNumber, routeDestination, arrivalTime, arrivalIsEstimated, busLocation);
             }
-            arrivalTime -= OCTRANSPO_API_MINUTES_TO_SUBTRACT_FROM_ARRIVAL_TIME;
-            String routeDestination = trip["TripDestination"];
-            bool arrivalIsEstimated = trip["AdjustmentAge"].as<float>() != -1 && trip["Longitude"] != "";
-
-            BusLocation busLocation = None;
-            if(routeNo == "88" && stopNo == "4483" && arrivalIsEstimated) {
-                busLocation = TooClose;
-                if(trip["Longitude"].as<float>() < OCTRANSPO_API_88_HURDMAN_LONGITUDE_THRESHOLD_BUS_FAR_ENOUGH_AWAY)
-                    busLocation = FarAwayEnough;
-            }
-            
-            addTrip(data, routeNumber, routeDestination, arrivalTime, arrivalIsEstimated, busLocation);
+        } else {
+            Serial.println("Warning: OC transpo endpoint returned INVALID JSON");
         }
     }
 
     _httpClient->end();
-
-    #ifdef DEBUG
     Serial.println("fetchTripsFor end");
-    #endif
 }
 
 void OCTranspoAPI::addTrip(RouteGroupData& data, String& routeNumber, String& routeDestination, uint8_t arrivalTime, bool arrivalIsEstimated, BusLocation busLocation) {

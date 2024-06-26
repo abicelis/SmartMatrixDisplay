@@ -625,10 +625,8 @@ void MatrixDisplay::BrightnessTaskFunction(void *pvParameters) {
             else
                 currentBrightness --;
 
-            #ifdef DEBUG
             // Serial.print("BrightnessTaskFunction LOOP, currentBrightness=");
             // Serial.println(currentBrightness);
-            #endif
 
             instance->_panelBrightness = currentBrightness;
             instance->_dma_display->setBrightness8(currentBrightness);

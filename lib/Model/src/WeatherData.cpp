@@ -69,6 +69,8 @@ void WeatherData::tryLoadWeatherDataFromFlash(Preferences& preferences) {
         
     } catch (const char* e) {
         Serial.println("EXCEPTION LOADING WEATHERDATA");
+        clearWeatherDataFromFlash(preferences);
+        weatherIcons.clear();
         return;
     }
 }
@@ -122,6 +124,7 @@ void WeatherData::saveWeatherDataToFlash(Preferences& preferences) {
 
     } catch (const char* e) {
         Serial.println("EXCEPTION SAVING WEATHERDATA");
+        clearWeatherDataFromFlash(preferences);
         return;
     }
 }
