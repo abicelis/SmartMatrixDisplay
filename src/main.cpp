@@ -13,177 +13,45 @@
 #include <OpenMeteoAPI.h>
 #include <Util.h>
 
+#define buttonPin 33
+
+Routes routes;
+WeatherData weatherData;
+
 Preferences preferences;
 WiFiClientSecure wifiClient;
 HTTPClient httpClient;
 MatrixDisplay display;
-OCTranspoAPI octranspoAPI(&wifiClient, &httpClient);
+OCTranspoAPI octranspoAPI(&wifiClient, &httpClient, &routes);
 OpenMeteoAPI openMeteoAPI(&wifiClient, &httpClient);
 Hysteresis hysteresis;
 
-bool firstPage = true;
-uint8_t loadingRecheckAttempt = 0;
+unsigned long lastButtonInterruptMillis = 0;
 AppState appState = Initializing;
-AppPage appPage = NoPage;
-TaskHandle_t taskHandle = NULL;
+
 uint32_t currentMillis = 0;
-uint32_t nextCheckMillis = 0;
+volatile uint32_t nextPageMillis = 0;
 uint32_t pageChangedMillis = 0;
 uint32_t previousLightSensorUpdateMillis = 0;
 uint32_t previousClockUpdateMillis = 0;
 uint32_t previousPageBarUpdateMillis = 0;
-RouteGroupData routeGroupData;
-WeatherData weatherData;
 
-void FetchRoutes(void *pvParameters) {
-    Serial.println("FetchRoutes task - Started");
-    routeGroupData = octranspoAPI.fetchRouteGroup(appPageToRouteGroupType(appPage));
-
-    if(routeGroupData.routeDestinations.size() == 0) {
-        Serial.println("FetchRoutes task WARNING - fetchRouteGroup() returned no trips!");
-        appState = NextPageErrorLoading;
-    } else {
-        printTrips(routeGroupData);
-        appState = NextPageLoaded;
-    }
-
-    if(firstPage)
-        nextCheckMillis = currentMillis; // Force check now
-    Serial.println("FetchRoutes task - Finished");
-    printHighWaterMarkForTask(taskHandle);
-    vTaskDelete(NULL);
-}
-
-void FetchWeather(void *pvParameters) {
-    Serial.println("FetchWeather task - Started");
-
-    if(weatherData.isStaleOrInvalid(ThreeHourForecast)) {
-        // Re-fetch weather data
-         openMeteoAPI.fetchWeatherData(weatherData, currentHourOfDay(), false);
-     
-        if(weatherData.isStaleOrInvalid(ThreeHourForecast)) {
-            weatherData.clearWeatherDataFromFlash(preferences);
-            Serial.println("FetchWeather task WARNING - fetchWeatherData() returned no data!");
-            appState = NextPageErrorLoading;
-        } else {
-            Serial.println("FetchWeather task - Saving weatherData to FLASH");
-            weatherData.saveWeatherDataToFlash(preferences);
-            appState = NextPageLoaded;
-        }
-    } else {
-        Serial.println("FetchWeather task - WeatherData is good still.");
-        appState = NextPageLoaded;
-    }
-
-    if(firstPage)
-        nextCheckMillis = currentMillis; // Force check now
-    Serial.println("FetchWeather task - Finished");
-    printHighWaterMarkForTask(taskHandle);
-    vTaskDelete(NULL);
-}
-
-void FetchCommute(void *pvParameters) {
-    Serial.println("FetchCommute task - Started");
-
-    if(weatherData.isStaleOrInvalid(VickyCommuteForecast)) {
-        // Re-fetch weather data
-        openMeteoAPI.fetchWeatherData(weatherData, currentHourOfDay(), true);
-
-        if(weatherData.isStaleOrInvalid(VickyCommuteForecast)) {
-            weatherData.clearWeatherDataFromFlash(preferences);
-            Serial.println("FetchCommute task WARNING - fetchWeatherData() returned no data!");
-            appState = NextPageErrorLoading;
-        } else {
-            Serial.println("FetchCommute task - Saving weatherData to FLASH");
-            weatherData.saveWeatherDataToFlash(preferences);
-            appState = NextPageLoaded;
-        }
-    } else {
-        Serial.println("FetchCommute task - WeatherData is good still.");
-        appState = NextPageLoaded;
-    }
-
-    if(appState == NextPageLoaded) {
-        routeGroupData = octranspoAPI.fetchRouteGroup(VickyCommute);
-        if(routeGroupData.routeDestinations.size() == 0) {
-            Serial.println("FetchCommute task WARNING - fetchRouteGroup() returned no trips!");
-            appState = NextPageErrorLoading;
-        } else {
-            printTrips(routeGroupData);
-        }
-    }
-
-    if(firstPage)
-        nextCheckMillis = currentMillis; // Force check now
-    Serial.println("FetchCommute task - Finished");
-    printHighWaterMarkForTask(taskHandle);
-    vTaskDelete(NULL);
-}
-
-void checkAppStateAndContinueFromThere() {
-    updateAppState(appState, appPage);
-    if(appState == NextPageLoading) {
-        // Serial.println("Fetching AppPage '" + String(appPage) + "'");
-        printAvailableHeapMemory();
-
-        if(appPage == VickyCommutePage) {
-            BaseType_t result = xTaskCreatePinnedToCore(FetchCommute, "FetchCommute", STACK_DEPTH_FETCH_COMMUTE_TASK, NULL, 1, &taskHandle, 0);
-            if(result == pdPASS) {
-                Serial.println("FetchCommute task launched");
-                nextCheckMillis = currentMillis + INTERVAL_PAGE_LIFETIME;
-            } else if(result == errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY) {
-                Serial.print("ERROR: Task creation failed due to insufficient memory! HEAP MEM=");
-                Serial.println(xPortGetFreeHeapSize());
-            } else {
-                Serial.print("ERROR: Task creation failed!!!");
-            }
-        } else if(appPage == NorthSouthPage || appPage == EastWestPage) {
-            BaseType_t result = xTaskCreatePinnedToCore(FetchRoutes, "FetchRoutes", STACK_DEPTH_FETCH_ROUTES_TASK, NULL, 1, &taskHandle, 0);
-            if(result == pdPASS) {
-                Serial.println("FetchRoutes task launched");
-                nextCheckMillis = currentMillis + INTERVAL_PAGE_LIFETIME;
-            } else if(result == errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY) {
-                Serial.print("ERROR: Task creation failed due to insufficient memory! HEAP MEM=");
-                Serial.println(xPortGetFreeHeapSize());
-            } else {
-                Serial.print("ERROR: Task creation failed!!!");
-            }
-        } else { // WeatherPage
-            BaseType_t result = xTaskCreatePinnedToCore(FetchWeather, "FetchWeather", STACK_DEPTH_FETCH_WEATHER_TASK, NULL, 1, &taskHandle, 0);
-            if(result == pdPASS) {
-                Serial.println("FetchWeather task launched");
-                nextCheckMillis = currentMillis + INTERVAL_PAGE_LIFETIME;
-            } else if(result == errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY) {
-                Serial.print("ERROR: Task creation failed due to insufficient memory! HEAP MEM=");
-                Serial.println(xPortGetFreeHeapSize());
-            } else {
-                Serial.print("ERROR: Task creation failed!!!");
-            }           
-        }
-    } else if(appState == Sleeping) {
-        Serial.println("Sleeping now");
-        display.drawSleepingPage();
-        nextCheckMillis = currentMillis + 3600000; // 1 hour
-    } else if(appState == DeepSleeping) {
-        Serial.println("DEEP Sleeping now");
-        display.clearScreen();
-
-        // TODO Stay in this state for WAY longer, 
-        // TODO But make sure to set nextCheckMillis so that we immediately wake up when we need to
-        // At APPSTATE_DEEP_SLEEPING_HOUR_END
-        // For now, we sleep for INTERVAL_PAGE_LIFETIME then re-check and re-check... 
-        // also consider shutting down wifi and other things in this state..?
-        nextCheckMillis = currentMillis + INTERVAL_PAGE_LIFETIME;
-    }
-
+void IRAM_ATTR buttonInterrupt() {
+  unsigned long interruptMillis = millis();
+  if (interruptMillis - lastButtonInterruptMillis > 500) {
+    Serial.println("   MAIN: Button pressed! Changing page");
+    lastButtonInterruptMillis = interruptMillis;
+    nextPageMillis = currentMillis;
+  }
 }
 
 void setup() {
     randomSeed(analogRead(0)); // Seed pseudorandom random()
-
     Serial.begin(115200);
-    delay(300);
-    Serial.println("\n\n     SMART LED MATRIX DISPLAY");
+    vTaskDelay(pdMS_TO_TICKS(300));
+
+    Serial.print("\n\n\n\n\n\n");
+    Serial.println("     SMART LED MATRIX DISPLAY");
     Serial.println("-----------------------------------");
     Serial.println("-----------------------------------");
 
@@ -195,21 +63,25 @@ void setup() {
     hysteresis.begin(4096, LIGHT_SENSOR_VALUE_MAX, LIGHT_SENSOR_VALUE_MIN, 
                      LIGHT_SENSOR_SAMPLES, DISPLAY_HYSTERESIS_BRIGHTNESS_STEPS-2, DISPLAY_HYSTERESIS_GAP_SIZE);
 
+    // 'Next screen' button interrupt
+    pinMode(buttonPin, INPUT);
+    attachInterrupt(digitalPinToInterrupt(buttonPin), buttonInterrupt, RISING);
+
     // WiFi
     uint8_t loadingPercent = 10;
     display.drawInitializationPage(loadingPercent);
     WiFi.mode(WIFI_STA);
     WiFi.begin(SSID_NAME, SSID_PASSWORD);
-    Serial.print("Connecting to WiFi..");
+    Serial.print("  SETUP: Connecting to WiFi..");
 
     while(WiFi.status() != WL_CONNECTED) {
         Serial.print(".");
-        delay(200);
+        vTaskDelay(pdMS_TO_TICKS(200));
         if(loadingPercent <= 20)
             display.drawInitializationPage(++loadingPercent);
     }
     Serial.println("DONE.");
-    Serial.print("  > Local IP: ");
+    Serial.print("  SETUP:   > Local IP: ");
     Serial.println(WiFi.localIP());
 
     // Configure HTTPClient and WiFiClient
@@ -220,41 +92,48 @@ void setup() {
     // Configure NTP
     loadingPercent = 30;
     display.drawInitializationPage(loadingPercent);
-    Serial.print("Grabbing time from NTP..");
+    Serial.print("  SETUP: Grabbing time from NTP..");
     configTime(NTP_GMT_OFFSET_SEC, NTP_DAYLIGHT_OFFSET_SEC, NTP_SERVER);
     time_t now;
     while (time(&now) < 1000) { // Wait until NTP request completes
         Serial.print(".");
-        delay(200);
+        vTaskDelay(pdMS_TO_TICKS(200));
         if(loadingPercent <= 50)
             display.drawInitializationPage(++loadingPercent);
     }
     Serial.println("DONE.");
     char timeStringBuff[20];
     currentDateFull(timeStringBuff, sizeof(timeStringBuff));
-    Serial.print("  > Time is ");
+    Serial.print("  SETUP:   > Time is ");
     Serial.println(timeStringBuff);
     
     // Load Weather data from flash.
-    Serial.print("Grabbing WeatherData from flash..");
+    Serial.print("  SETUP: Attempting to load WeatherData from flash..");
     preferences.begin("app", false);
     // preferences.clear();
     weatherData.tryLoadWeatherDataFromFlash(preferences);
     Serial.println("DONE.");
     if(weatherData.times.size() > 0) {
-        Serial.println("  > WeatherData loaded successfully");
+        Serial.println("  SETUP:   > WeatherData loaded successfully");
     } else {
-        Serial.println("  > WeatherData NOT loaded");
+        Serial.println("  SETUP:   > WeatherData NOT loaded");
     }
-    
-    Serial.println("--------------------------------------");
-    Serial.println("\n\nSTARTING:");
-    
     loadingPercent = 70;
     display.drawInitializationPage(loadingPercent);
 
+    // Fetch initial data
+    Serial.println("  SETUP: Fetching initial data..");
+    octranspoAPI.fetchRoutes();
+    loadingPercent = 90;
+    display.drawInitializationPage(loadingPercent);
+    Serial.println("DONE.");
+
+    // START
+    Serial.println("\n\n              MAIN");
+    Serial.println("-----------------------------------");
     currentMillis = millis();
-    nextCheckMillis = currentMillis;
+    nextPageMillis = currentMillis;
+    octranspoAPI.startFetchRoutesTask();
 }
 
 void loop() {
@@ -265,7 +144,7 @@ void loop() {
         previousLightSensorUpdateMillis = currentMillis;
     }
 
-    if(!firstPage && appPage != NoPage) {
+    if(inAContentPage(appState)) {
         if(currentMillis - previousClockUpdateMillis >= INTERVAL_UPDATE_CLOCK) {
             char currentTime[6];
             currentHourMinute(currentTime, sizeof(currentTime));
@@ -281,45 +160,47 @@ void loop() {
         }
     }
 
-
-    if(currentMillis >= nextCheckMillis) {
-        if(appState == Initializing) {
-            checkAppStateAndContinueFromThere();
-        } else if(appState == NextPageLoaded) {
+    if(currentMillis >= nextPageMillis) {
+        updateAppState(appState);
+        if (appState == Sleeping) {
+            Serial.println("   MAIN: Change to Sleeping");
+            display.drawSleepingPage();
+            nextPageMillis = currentMillis + 3600000; // Sleep for 1 hour
+        } else if (appState == DeepSleeping) {
+            Serial.println("   MAIN: Change to DEEP Sleeping");
+            display.clearScreen();
+            // TODO Stay in this state for WAY longer, 
+            // TODO But make sure to set nextPageMillis so that we immediately wake up when we need to
+            // At APPSTATE_DEEP_SLEEPING_HOUR_END
+            // For now, we sleep for INTERVAL_PAGE_LIFETIME then re-check and re-check... 
+            // also consider shutting down wifi and other things in this state..?
+            nextPageMillis = currentMillis + INTERVAL_PAGE_LIFETIME;
+        } else {
             char currentTime[6];
             currentHourMinute(currentTime, sizeof(currentTime));
-            char currentDate[20];
-            currentDateShort(currentDate, sizeof(currentDate));
-            if(appPage == WeatherPage)
-                display.drawWeatherPage(weatherData, currentTime, currentDate);
-            else {
-                if(appPage == VickyCommutePage)
-                    display.drawVickyCommutePage(routeGroupData, weatherData, currentTime);
-                else
-                    display.drawBusSchedulePage(routeGroupData, appPageToRouteGroupType(appPage), currentTime);
-            }
-            firstPage = false;
-            loadingRecheckAttempt = 0;
-            pageChangedMillis = currentMillis;
-            checkAppStateAndContinueFromThere();
-        } else if (appState == NextPageLoading) {
-            // TODO, eventually either kill the task, or reset the ESP32 if we're stuck here.
-            loadingRecheckAttempt++;
 
-            if(loadingRecheckAttempt >= LOADING_RECHECK_ATTEMPTS) {
-                Serial.println("Too many rechecks while loading a next page, restarting ESP.");
-                ESP.restart();
-            } else {
-                nextCheckMillis = currentMillis + INTERVAL_PAGE_LOADING_RETRY;
+            if(appState == CommutePage) {
+                Serial.println("   MAIN: Change to CommutePage");
+                // std::vector<UITrip> uiTrips = routes.getSortedUITripsForCommute();
+                // display.drawCommutePage(routes, weatherData, currentTime);
+            } else if(appState == WeatherPage) {
+                Serial.println("   MAIN: Change to CommutePage");
+                // display.drawWeatherPage(weatherData, currentTime);
+            } else if(appState == NorthSouthPage) {
+                Serial.println("   MAIN: Change to NorthSouthPage");
+                std::vector<UITrip> uiTrips = routes.getSortedUITripsByDirection(NorthSouth);
+                display.drawTripsPage(uiTrips, appState, currentTime);
+            }  else if(appState == EastWestPage) {
+                Serial.println("   MAIN: Change to EastWestPage");
+                std::vector<UITrip> uiTrips = routes.getSortedUITripsByDirection(EastWest);
+                display.drawTripsPage(uiTrips, appState, currentTime);
             }
-        } else if (appState == NextPageErrorLoading) {
-            Serial.println("Error loading next page, restarting ESP.");
-            ESP.restart();
-        } else if (appState == Sleeping || appState == DeepSleeping) {
-            checkAppStateAndContinueFromThere();
+        
+            pageChangedMillis = currentMillis;
+            nextPageMillis = currentMillis + INTERVAL_PAGE_LIFETIME;
         }
     }
         
-    delay(10);                // Healthy sleep
-    currentMillis = millis(); // Refresh for next loop
+    vTaskDelay(pdMS_TO_TICKS(10));  // Healthy sleep
+    currentMillis = millis();       // Refresh for next loop
 }

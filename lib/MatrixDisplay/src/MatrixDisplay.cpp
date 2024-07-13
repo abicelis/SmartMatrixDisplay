@@ -89,7 +89,7 @@ void MatrixDisplay::drawInitializationPage(uint8_t loadingBarWidthPixels) {
     INITIALIZATION_PAGE_BAR_THICKNESS_PX, INITIALIZATION_PAGE_BAR_CORNER_RADIUS_PX, _colorTextPrimary);
 }
 
-void MatrixDisplay::drawVickyCommutePage(RouteGroupData& data, WeatherData& weatherData, const char* currentTime) {
+void MatrixDisplay::drawCommutePage(UITrip& trip, WeatherData& weatherData, const char* currentTime) {
     fadeOutScreen();
     clearScreen();
 
@@ -115,38 +115,34 @@ void MatrixDisplay::drawVickyCommutePage(RouteGroupData& data, WeatherData& weat
 
     _trackingBusIndicatorPositions.clear();
 
-    if(data.routeDestinations.size() >= 1) {  // There should be only one route -> 88 Hurdman.
-        const auto &destination = data.routeDestinations[0]; 
-
         // Draw LTR. RouteNumber, then RouteLabel
-        drawRouteSign(destination.routeType, PAGE_HORIZONTAL_MARGIN_PX, row-8, SCHEDULE_BUS_SIGN_WIDTH_PX, destination.routeNumber.c_str());
-        drawText(PAGE_HORIZONTAL_MARGIN_PX + SCHEDULE_BUS_SIGN_WIDTH_PX + SCHEDULE_BUS_SIGN_AND_BUS_LABEL_MARGIN_PX, row, shortenRouteDestination(destination.routeDestination).c_str());
+        drawRouteSign(trip.routeType, PAGE_HORIZONTAL_MARGIN_PX, row-8, SCHEDULE_BUS_SIGN_WIDTH_PX, trip.routeNumber.c_str());
+        drawText(PAGE_HORIZONTAL_MARGIN_PX + SCHEDULE_BUS_SIGN_WIDTH_PX + SCHEDULE_BUS_SIGN_AND_BUS_LABEL_MARGIN_PX, row, shortenRouteDestination(trip.actualDestination).c_str());
 
         // Foreach trip: 
         uint8_t xPos = PANEL_RES_X - 1 - PAGE_HORIZONTAL_MARGIN_PX;
         int8_t j = SCHEDULE_VICKY_COMMUTE_MAX_TRIPS - 1;
-        if(destination.trips.size() < j+1)
-            j = destination.trips.size() - 1;
+        if(trip.arrivals.size() < j+1)
+            j = trip.arrivals.size() - 1;
 
-        while(j >= 0) {  
-            const auto &trip = destination.trips[j];
+    while(j >= 0) {  
+        const auto &tripArrival = trip.arrivals[j];
 
-            //Draw RTL. MinuteSymbol, then ArrivalTime
-            drawMinuteSymbol(xPos, row-7);
-            String arrivalStr = String(trip.arrivalTime);
-            const char* arrivalCStr = arrivalStr.c_str();
-            uint8_t arrivalEndXPos = xPos - SCHEDULE_BUS_MINUTE_SYMBOL_AND_ARRIVAL_TIME_MARGIN_PX;
-            uint8_t arrivalStartXPos = getRightAlignStartingPoint(arrivalCStr, arrivalEndXPos);
-            drawText(arrivalStartXPos, row, arrivalCStr);
+        //Draw RTL. MinuteSymbol, then ArrivalTime
+        drawMinuteSymbol(xPos, row-7);
+        String arrivalStr = String(tripArrival.time);
+        const char* arrivalCStr = arrivalStr.c_str();
+        uint8_t arrivalEndXPos = xPos - SCHEDULE_BUS_MINUTE_SYMBOL_AND_ARRIVAL_TIME_MARGIN_PX;
+        uint8_t arrivalStartXPos = getRightAlignStartingPoint(arrivalCStr, arrivalEndXPos);
+        drawText(arrivalStartXPos, row, arrivalCStr);
 
-            if(trip.arrivalIsEstimated) {
-                uint8_t trackingIndicatorXPos = arrivalStartXPos - SCHEDULE_BUS_ARRIVAL_TIME_AND_TRACKING_INDICATOR_MARGIN_PX;
-                _trackingBusIndicatorPositions.push_back(std::make_tuple(trackingIndicatorXPos, row-7, trip.busLocation == FarAwayEnough));
-            }
-
-            xPos -= SCHEDULE_VICKY_COMMUTE_BETWEEN_TRIPS_SPACING_PX;
-            j--;
+        if(tripArrival.IsEstimated) {
+            uint8_t trackingIndicatorXPos = arrivalStartXPos - SCHEDULE_BUS_ARRIVAL_TIME_AND_TRACKING_INDICATOR_MARGIN_PX;
+            _trackingBusIndicatorPositions.push_back(std::make_tuple(trackingIndicatorXPos, row-7, tripArrival.location == FarAwayEnough));
         }
+
+        xPos -= SCHEDULE_VICKY_COMMUTE_BETWEEN_TRIPS_SPACING_PX;
+        j--;
     }
 
     // Weather section
@@ -191,7 +187,7 @@ void MatrixDisplay::drawVickyCommutePage(RouteGroupData& data, WeatherData& weat
     // Serial.println("ExtraWeatherDataTask LAUNCHED");
 }
 
-void MatrixDisplay::drawBusSchedulePage(RouteGroupData& data, RouteGroupType tripsType, const char* currentTime) {
+void MatrixDisplay::drawTripsPage(std::vector<UITrip>& trips, AppState appState, const char* currentTime) {
     fadeOutScreen();
     clearScreen();
 
@@ -200,16 +196,9 @@ void MatrixDisplay::drawBusSchedulePage(RouteGroupData& data, RouteGroupType tri
     _dma_display->drawRGBBitmap(SCHEDULE_ICON_X_POSITION, SCHEDULE_ICON_Y_POSITION, icon_OCTranspoLogo, 9, 9);
 
     // Draw Title
-    if(tripsType==VickyCommute) {
-        const char* title = "Vicky";
-        drawText(SCHEDULE_TITLE_X_POSITION, SCHEDULE_TITLE_Y_POSITION, title);
-        
-        _dma_display->setCursor(_dma_display->getCursorX()+2, _dma_display->getCursorY()-1);
-        _dma_display->setFont(); // Use default font
-        _dma_display->write(0x03);
-    } else if(tripsType==NorthSouth) {
+    if(appState == NorthSouthPage) {
         drawText(SCHEDULE_TITLE_X_POSITION, SCHEDULE_TITLE_Y_POSITION, "North-South");
-    } else if(tripsType==EastWest) {
+    } else if(appState == EastWestPage) {
         drawText(SCHEDULE_TITLE_X_POSITION, SCHEDULE_TITLE_Y_POSITION, "East-West");
     }
 
@@ -225,33 +214,33 @@ void MatrixDisplay::drawBusSchedulePage(RouteGroupData& data, RouteGroupType tri
 
     _trackingBusIndicatorPositions.clear();
 
-    for(uint8_t i = 0; i < data.routeDestinations.size() && i < SCHEDULE_MAX_ROUTES ; i++) {  
-        const auto &destination = data.routeDestinations[i]; 
+    for(uint8_t i = 0; i < trips.size() && i < SCHEDULE_MAX_ROUTES ; i++) {  
+        const auto &trip = trips[i]; 
 
         // Draw LTR. RouteNumber, then RouteLabel
-        drawRouteSign(destination.routeType, PAGE_HORIZONTAL_MARGIN_PX, row-8, SCHEDULE_BUS_SIGN_WIDTH_PX, destination.routeNumber.c_str());
-        drawText(PAGE_HORIZONTAL_MARGIN_PX + SCHEDULE_BUS_SIGN_WIDTH_PX + SCHEDULE_BUS_SIGN_AND_BUS_LABEL_MARGIN_PX, row, shortenRouteDestination(destination.routeDestination).c_str());
+        drawRouteSign(trip.routeType, PAGE_HORIZONTAL_MARGIN_PX, row-8, SCHEDULE_BUS_SIGN_WIDTH_PX, trip.routeNumber.c_str());
+        drawText(PAGE_HORIZONTAL_MARGIN_PX + SCHEDULE_BUS_SIGN_WIDTH_PX + SCHEDULE_BUS_SIGN_AND_BUS_LABEL_MARGIN_PX, row, shortenRouteDestination(trip.actualDestination).c_str());
 
         // Foreach trip: 
         uint8_t xPos = PANEL_RES_X - 3 - PAGE_HORIZONTAL_MARGIN_PX;
         int8_t j = SCHEDULE_MAX_TRIPS - 1;
-        if(destination.trips.size() < j+1)
-            j = destination.trips.size() - 1;
+        if(trip.arrivals.size() < j+1)
+            j = trip.arrivals.size() - 1;
 
         while(j >= 0) {  
-            const auto &trip = destination.trips[j];
+            const auto &arrival = trip.arrivals[j];
 
-            //Draw RTL. MinuteSymbol, then ArrivalTime
+            // Draw RTL. MinuteSymbol, then ArrivalTime
             drawMinuteSymbol(xPos, row-7);
-            String arrivalStr = String(trip.arrivalTime);
+            String arrivalStr = String(arrival.time);
             const char* arrivalCStr = arrivalStr.c_str();
             uint8_t arrivalEndXPos = xPos - SCHEDULE_BUS_MINUTE_SYMBOL_AND_ARRIVAL_TIME_MARGIN_PX;
             uint8_t arrivalStartXPos = getRightAlignStartingPoint(arrivalCStr, arrivalEndXPos);
             drawText(arrivalStartXPos, row, arrivalCStr);
 
-            if(trip.arrivalIsEstimated) {
+            if(arrival.IsEstimated) {
                 uint8_t trackingIndicatorXPos = arrivalStartXPos - SCHEDULE_BUS_ARRIVAL_TIME_AND_TRACKING_INDICATOR_MARGIN_PX;
-                _trackingBusIndicatorPositions.push_back(std::make_tuple(trackingIndicatorXPos, row-7, trip.busLocation == FarAwayEnough));
+                _trackingBusIndicatorPositions.push_back(std::make_tuple(trackingIndicatorXPos, row-7, arrival.location == FarAwayEnough));
             }
 
             xPos -= SCHEDULE_BUS_BETWEEN_TRIPS_SPACING_PX;
@@ -268,7 +257,7 @@ void MatrixDisplay::drawBusSchedulePage(RouteGroupData& data, RouteGroupType tri
     }
 }
 
-void MatrixDisplay::drawWeatherPage(WeatherData& weatherData, const char* currentTime, const char* currentDateShort) {
+void MatrixDisplay::drawWeatherPage(WeatherData& weatherData, const char* currentTime) {
     fadeOutScreen();
     clearScreen();
 
@@ -277,7 +266,6 @@ void MatrixDisplay::drawWeatherPage(WeatherData& weatherData, const char* curren
 
     // Draw Title
     drawText(SCHEDULE_TITLE_X_POSITION, SCHEDULE_TITLE_Y_POSITION, "Accuweather");
-    // drawText(WEATHER_PAGE_TITLE_X_POSITION, WEATHER_PAGE_TITLE_Y_POSITION, currentDateShort);
 
     // Draw clock
     drawTextEnd(PAGE_CLOCK_X_POSITION, PAGE_CLOCK_Y_POSITION, currentTime, _colorTextPrimary, &Font5x7Fixed);
@@ -837,10 +825,8 @@ void MatrixDisplay::drawASCWWImage(int x, int y, int width, int height, const ch
 String MatrixDisplay::shortenRouteDestination(const String& label) {
     String out = String(label);
     out.replace("Pasture", "P");
-    // out.replace("Barrhaven", "Barrhvn");
     out.replace("Centre", "");
     out.replace("Auriga", "A");
-    // out.replace("Corners", "Cnrs");
     return out;
 }
 
@@ -872,7 +858,7 @@ void MatrixDisplay::fadeOutScreen() {
     while(brightnessPercentage > 0) {
         _dma_display->setBrightness8((uint8_t)(((float)brightnessPercentage/100) * _panelBrightness));
         brightnessPercentage = brightnessPercentage - 10;
-        delay(50);
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
 }
 
@@ -881,7 +867,7 @@ void MatrixDisplay::fadeInScreen() {
     while(brightnessPercentage < 100) {
         _dma_display->setBrightness8((uint8_t)(((float)brightnessPercentage/100) * _panelBrightness));
         brightnessPercentage = brightnessPercentage + 10;
-        delay(50);
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
 }
 

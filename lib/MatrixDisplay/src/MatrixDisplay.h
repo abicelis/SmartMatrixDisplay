@@ -3,7 +3,7 @@
 #include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>
 #include <Model.h>
 #include <WeatherData.h>
-#include <RouteGroupData.h>
+#include "octranspo/UITrip.h"
 class MatrixDisplay {
     public:
         void begin(int8_t r1_pin,
@@ -26,9 +26,9 @@ class MatrixDisplay {
 
         void testDrawWeatherIcons();
         void drawInitializationPage(uint8_t loadingBarWidthPixels);
-        void drawVickyCommutePage(RouteGroupData& data, WeatherData& weatherData, const char* currentTime);
-        void drawBusSchedulePage(RouteGroupData& data, RouteGroupType tripsType, const char* currentTime);
-        void drawWeatherPage(WeatherData& weatherData, const char* currentTime, const char* currentDateShort);
+        void drawCommutePage(UITrip& trip, WeatherData& weatherData, const char* currentTime);
+        void drawTripsPage(std::vector<UITrip>& trips, AppState appState, const char* currentTime);
+        void drawWeatherPage(WeatherData& weatherData, const char* currentTime);
         void drawSleepingPage();
 
         void drawClock(const char* currentTime);

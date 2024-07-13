@@ -17,8 +17,8 @@ void WeatherData::tryLoadWeatherDataFromFlash(Preferences& preferences) {
         return;
 
     String weatherDataJson = preferences.getString("weatherData");
-    Serial.print("LOADED weatherDataJson: ");
-    Serial.println(weatherDataJson);
+    // Serial.print("LOADED weatherDataJson: ");
+    // Serial.println(weatherDataJson);
     try {
         JsonDocument doc;
         deserializeJson(doc, weatherDataJson);
