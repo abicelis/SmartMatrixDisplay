@@ -17,14 +17,15 @@
 
 Routes routes;
 Forecast forecast;
+AppState appState = Initializing;
+
 Preferences preferences;
 WiFiClientSecure wifiClient;
 HTTPClient httpClient;
 MatrixDisplay display;
-DataFetcher dataFetcher(&wifiClient, &httpClient, &preferences, &routes, &forecast);
+DataFetcher dataFetcher(&wifiClient, &httpClient, &preferences, &routes, &forecast, &appState);
 Hysteresis hysteresis;
 
-AppState appState = Initializing;
 volatile unsigned long lastButtonInterruptMillis = 0;
 volatile bool buttonPressed = false;
 volatile uint32_t currentMillis = 0;
@@ -180,8 +181,10 @@ void loop() {
             // also consider shutting down wifi and other things in this state..?
             nextPageMillis = currentMillis + INTERVAL_PAGE_LIFETIME;
         } else {
+            dataFetcher.startFetcherTask();
             char currentTime[6];
             currentHourMinute(currentTime, sizeof(currentTime));
+
 
             if(appState == CommutePage) {
                 Serial.println("      MAIN: Change to CommutePage");

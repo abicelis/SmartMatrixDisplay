@@ -14,6 +14,13 @@ uint8_t currentHourOfDay() {
     uint8_t hod = timeinfo->tm_hour;
     return hod;
 }
+uint8_t currentMinute() {
+    time_t now;
+    time(&now);
+    struct tm *timeinfo = localtime(&now);
+    uint8_t min = timeinfo->tm_min;
+    return min;
+}
 uint8_t currentDayOfMonth() {
     time_t now;
     time(&now);
@@ -68,38 +75,32 @@ void updateAppState(AppState& appState) {
     // appState = NorthSouthPage;
     // return;
 
-    int hourOfDay = currentHourOfDay();
-    bool commute = hourOfDay >= APPSTATE_COMMUTE_HOUR_START && hourOfDay <= APPSTATE_COMMUTE_HOUR_END;
-    bool sleeping = hourOfDay == APPSTATE_DEEP_SLEEPING_HOUR_START-1;
-    // sleeping = false;
-    bool deepSleeping = hourOfDay >= APPSTATE_DEEP_SLEEPING_HOUR_START || hourOfDay <= APPSTATE_DEEP_SLEEPING_HOUR_END;
-    // deepSleeping = false;
 
-    // Serial.println("      UTIL: Updating AppState - Hour=" + String(hourOfDay) 
-    //         + ", Sleep=" + String(sleeping) +
-    //         + ", DeepSleep=" + String(deepSleeping) +
-    //          ", Commute=" + String(commute) + " ");
-
-    if(commute) {
+    int hour = currentHourOfDay();
+    int minute = currentMinute();
+    if(hour == APPSTATE_WAKING_UP_HOUR_START && minute >= APPSTATE_WAKING_UP_MINUTE_START) {
+        Serial.println("      UTIL: New App State: Waking Up");
+        appState = WakingUp;
+    } else if (hour == APPSTATE_COMMUTE_HOUR_START) {
         Serial.println("      UTIL: New App State: Commute");
         appState = CommutePage;
-    } else if(sleeping) {
-        Serial.println("      UTIL: New App State: Sleeping");
-        appState = Sleeping;
-    }  else if(deepSleeping) {
-        Serial.println("      UTIL: New App State: DEEP Sleeping");
-        appState = DeepSleeping;
-    } else {
-        if(appState == Initializing || appState == WeatherPage) {
-            Serial.println("      UTIL: New App State: NorthSouthPage");
-            appState = NorthSouthPage;
-        } else if(appState == NorthSouthPage) {
+    } else if (hour >= APPSTATE_NORMAL_HOUR_START && hour < APPSTATE_SLEEPING_HOUR_START) {
+        if(appState == NorthSouthPage) {
             Serial.println("      UTIL: New App State: EastWestPage");
             appState = EastWestPage;
-        } else { // EastWestPage
-        Serial.println("      UTIL: New App State: WeatherPage");
+        } else if(appState == EastWestPage) {
+            Serial.println("      UTIL: New App State: WeatherPage");
             appState = WeatherPage;
+        } else {
+            Serial.println("      UTIL: New App State: NorthSouthPage");
+            appState = NorthSouthPage;
         }
+    } else if (hour == APPSTATE_SLEEPING_HOUR_START) {
+        Serial.println("      UTIL: New App State: Sleeping");
+        appState = Sleeping;
+    } else {
+        Serial.println("      UTIL: New App State: DEEP Sleeping");
+        appState = DeepSleeping;
     }
 }
 

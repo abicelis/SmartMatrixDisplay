@@ -7,11 +7,13 @@
 #include "DataFetcher.h"
 #include "OCTranspoAPI.h"
 #include "OpenMeteoAPI.h"
+#include "Util.h"
 
 DataFetcher::DataFetcher(WiFiClientSecure* wifiClient, HTTPClient* httpClient, Preferences* preferences,
-            Routes* routes, Forecast* forecast) {
+            Routes* routes, Forecast* forecast, AppState* appState) {
 
     _routes = routes;
+    _appState = appState;
     _ocTranspoAPI = new OCTranspoAPI(wifiClient, httpClient, routes);
     _openMeteoAPI = new OpenMeteoAPI(wifiClient, httpClient, forecast);
     _accuweatherAPI = new AccuweatherAPI(wifiClient, httpClient, preferences, forecast);
@@ -45,4 +47,3 @@ void DataFetcher::startFetcherTask() {
         ESP.restart();
     }
 }
-
