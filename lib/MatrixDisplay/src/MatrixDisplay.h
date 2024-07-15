@@ -1,8 +1,8 @@
 #ifndef MATRIX_DISPLAY_H
 #define MATRIX_DISPLAY_H
 #include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>
-#include <Model.h>
-#include <WeatherData.h>
+#include "Model.h"
+#include "forecast/UIForecast.h"
 #include "octranspo/UITrip.h"
 class MatrixDisplay {
     public:
@@ -26,10 +26,11 @@ class MatrixDisplay {
 
         void testDrawWeatherIcons();
         void drawInitializationPage(uint8_t loadingBarWidthPixels);
-        void drawCommutePage(UITrip& trip, WeatherData& weatherData, const char* currentTime);
+        void drawCommutePage(UITrip& trip, UIForecast& forecast, const char* currentTime);
         void drawTripsPage(std::vector<UITrip>& trips, AppState appState, const char* currentTime);
-        void drawWeatherPage(WeatherData& weatherData, const char* currentTime);
+        void drawWeatherPage(UIForecast& forecast, const char* currentTime);
         void drawSleepingPage();
+        void drawButtonPressedFeedback();
 
         void drawClock(const char* currentTime);
         void drawPageBar(float percentComplete);
@@ -59,10 +60,10 @@ class MatrixDisplay {
         TaskHandle_t trackingBusIndicatorTaskHandle = NULL;
         static void TrackingBusIndicatorTaskFunction(void *pvParameters);
 
-        WeatherData _extraWeatherData;
-        TaskHandle_t extraWeatherDataTaskHandle = NULL;
-        static void ExtraWeatherDataTaskFunction(void *pvParameters);
-        static void ExtraWeatherDataVickyCommuteTaskFunction(void *pvParameters);
+        UIForecast _extraForecast;
+        TaskHandle_t extraForecastTaskHandle = NULL;
+        static void ExtraForecastTaskFunction(void *pvParameters);
+        static void ExtraForecastCommuteTaskFunction(void *pvParameters);
 
         TaskHandle_t sleepingAnimationTaskHandle = NULL;
         static void SleepingAnimationTaskFunction(void *pvParameters);

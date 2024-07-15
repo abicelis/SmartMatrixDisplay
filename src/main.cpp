@@ -4,32 +4,30 @@
 #include <WiFiClientSecure.h>
 #include <Preferences.h>
 
-#include <Config.h>
-#include <Model.h>
-
-#include <Hysteresis.h>
-#include <OCTranspoAPI.h>
-#include <MatrixDisplay.h>
-#include <OpenMeteoAPI.h>
-#include <Util.h>
+#include "octranspo/Routes.h"
+#include "forecast/Forecast.h"
+#include "DataFetcher.h"
+#include "Config.h"
+#include "Model.h"
+#include "Hysteresis.h"
+#include "MatrixDisplay.h"
+#include "Util.h"
 
 #define buttonPin 33
 
 Routes routes;
-WeatherData weatherData;
-
+Forecast forecast;
 Preferences preferences;
 WiFiClientSecure wifiClient;
 HTTPClient httpClient;
 MatrixDisplay display;
-OCTranspoAPI octranspoAPI(&wifiClient, &httpClient, &routes);
-OpenMeteoAPI openMeteoAPI(&wifiClient, &httpClient);
+DataFetcher dataFetcher(&wifiClient, &httpClient, &preferences, &routes, &forecast);
 Hysteresis hysteresis;
 
-unsigned long lastButtonInterruptMillis = 0;
 AppState appState = Initializing;
-
-uint32_t currentMillis = 0;
+volatile unsigned long lastButtonInterruptMillis = 0;
+volatile bool buttonPressed = false;
+volatile uint32_t currentMillis = 0;
 volatile uint32_t nextPageMillis = 0;
 uint32_t pageChangedMillis = 0;
 uint32_t previousLightSensorUpdateMillis = 0;
@@ -38,10 +36,10 @@ uint32_t previousPageBarUpdateMillis = 0;
 
 void IRAM_ATTR buttonInterrupt() {
   unsigned long interruptMillis = millis();
-  if (interruptMillis - lastButtonInterruptMillis > 500) {
-    Serial.println("   MAIN: Button pressed! Changing page");
+  if (interruptMillis - lastButtonInterruptMillis > 400) {
+    Serial.println("      MAIN: Button pressed!");
+    buttonPressed = true;
     lastButtonInterruptMillis = interruptMillis;
-    nextPageMillis = currentMillis;
   }
 }
 
@@ -72,7 +70,7 @@ void setup() {
     display.drawInitializationPage(loadingPercent);
     WiFi.mode(WIFI_STA);
     WiFi.begin(SSID_NAME, SSID_PASSWORD);
-    Serial.print("  SETUP: Connecting to WiFi..");
+    Serial.print("     SETUP: Connecting to WiFi..");
 
     while(WiFi.status() != WL_CONNECTED) {
         Serial.print(".");
@@ -81,7 +79,7 @@ void setup() {
             display.drawInitializationPage(++loadingPercent);
     }
     Serial.println("DONE.");
-    Serial.print("  SETUP:   > Local IP: ");
+    Serial.print("     SETUP:   > Local IP: ");
     Serial.println(WiFi.localIP());
 
     // Configure HTTPClient and WiFiClient
@@ -92,7 +90,7 @@ void setup() {
     // Configure NTP
     loadingPercent = 30;
     display.drawInitializationPage(loadingPercent);
-    Serial.print("  SETUP: Grabbing time from NTP..");
+    Serial.print("     SETUP: Grabbing time from NTP..");
     configTime(NTP_GMT_OFFSET_SEC, NTP_DAYLIGHT_OFFSET_SEC, NTP_SERVER);
     time_t now;
     while (time(&now) < 1000) { // Wait until NTP request completes
@@ -104,26 +102,26 @@ void setup() {
     Serial.println("DONE.");
     char timeStringBuff[20];
     currentDateFull(timeStringBuff, sizeof(timeStringBuff));
-    Serial.print("  SETUP:   > Time is ");
+    Serial.print("     SETUP:   > Time is ");
     Serial.println(timeStringBuff);
     
     // Load Weather data from flash.
-    Serial.print("  SETUP: Attempting to load WeatherData from flash..");
+    Serial.print("     SETUP: Attempting to load Forecast from flash..");
     preferences.begin("app", false);
     // preferences.clear();
-    weatherData.tryLoadWeatherDataFromFlash(preferences);
+    bool loaded = forecast.tryLoadForecastFromFlash(preferences);
     Serial.println("DONE.");
-    if(weatherData.times.size() > 0) {
-        Serial.println("  SETUP:   > WeatherData loaded successfully");
+    if(loaded) {
+        Serial.println("     SETUP:   > Forecast loaded successfully");
     } else {
-        Serial.println("  SETUP:   > WeatherData NOT loaded");
+        Serial.println("     SETUP:   > Forecast NOT loaded");
     }
     loadingPercent = 70;
     display.drawInitializationPage(loadingPercent);
 
     // Fetch initial data
-    Serial.println("  SETUP: Fetching initial data..");
-    octranspoAPI.fetchRoutes();
+    Serial.println("     SETUP: Fetching initial data..");
+    dataFetcher.fetchDataSynchronously();
     loadingPercent = 90;
     display.drawInitializationPage(loadingPercent);
     Serial.println("DONE.");
@@ -133,7 +131,7 @@ void setup() {
     Serial.println("-----------------------------------");
     currentMillis = millis();
     nextPageMillis = currentMillis;
-    octranspoAPI.startFetchRoutesTask();
+    dataFetcher.startFetcherTask();
 }
 
 void loop() {
@@ -160,14 +158,20 @@ void loop() {
         }
     }
 
-    if(currentMillis >= nextPageMillis) {
+    if(currentMillis >= nextPageMillis || buttonPressed) {
+        if(buttonPressed) {
+            Serial.println("      MAIN: Changing page due to button press!");
+            display.drawButtonPressedFeedback();
+            buttonPressed = false;
+        }
+        
         updateAppState(appState);
         if (appState == Sleeping) {
-            Serial.println("   MAIN: Change to Sleeping");
+            Serial.println("      MAIN: Change to Sleeping");
             display.drawSleepingPage();
             nextPageMillis = currentMillis + 3600000; // Sleep for 1 hour
         } else if (appState == DeepSleeping) {
-            Serial.println("   MAIN: Change to DEEP Sleeping");
+            Serial.println("      MAIN: Change to DEEP Sleeping");
             display.clearScreen();
             // TODO Stay in this state for WAY longer, 
             // TODO But make sure to set nextPageMillis so that we immediately wake up when we need to
@@ -180,18 +184,25 @@ void loop() {
             currentHourMinute(currentTime, sizeof(currentTime));
 
             if(appState == CommutePage) {
-                Serial.println("   MAIN: Change to CommutePage");
-                // std::vector<UITrip> uiTrips = routes.getSortedUITripsForCommute();
-                // display.drawCommutePage(routes, weatherData, currentTime);
+                Serial.println("      MAIN: Change to CommutePage");
+                UITrip* uiTrip;
+                routes.getUITripForCommute(uiTrip);
+                if(uiTrip == NULL) {
+                    Serial.println("      MAIN: ERROR getting Commute UITrip from Routes!");
+                    ESP.restart();
+                }
+                UIForecast uiForecast = forecast.getUIForecast();
+                display.drawCommutePage(*uiTrip, uiForecast, currentTime);
             } else if(appState == WeatherPage) {
-                Serial.println("   MAIN: Change to CommutePage");
-                // display.drawWeatherPage(weatherData, currentTime);
+                Serial.println("      MAIN: Change to WeatherPage");
+                UIForecast uiForecast = forecast.getUIForecast();
+                display.drawWeatherPage(uiForecast, currentTime);
             } else if(appState == NorthSouthPage) {
-                Serial.println("   MAIN: Change to NorthSouthPage");
+                Serial.println("      MAIN: Change to NorthSouthPage");
                 std::vector<UITrip> uiTrips = routes.getSortedUITripsByDirection(NorthSouth);
                 display.drawTripsPage(uiTrips, appState, currentTime);
             }  else if(appState == EastWestPage) {
-                Serial.println("   MAIN: Change to EastWestPage");
+                Serial.println("      MAIN: Change to EastWestPage");
                 std::vector<UITrip> uiTrips = routes.getSortedUITripsByDirection(EastWest);
                 display.drawTripsPage(uiTrips, appState, currentTime);
             }

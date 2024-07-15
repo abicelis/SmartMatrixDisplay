@@ -53,11 +53,11 @@ bool inAContentPage(AppState& appState) {
 }
 
 void updateAppState(AppState& appState) {
-    if(appState == Initializing || appState == EastWestPage)
-        appState = NorthSouthPage;
-    else
-        appState = EastWestPage;
-    return;
+    // if(appState == Initializing || appState == EastWestPage)
+    //     appState = NorthSouthPage;
+    // else
+    //     appState = EastWestPage;
+    // return;
     
     // appState = CommutePage;
     // return;
@@ -69,45 +69,47 @@ void updateAppState(AppState& appState) {
     // return;
 
     int hourOfDay = currentHourOfDay();
-    bool commute = hourOfDay >= APPSTATE_VICKY_COMMUTE_HOUR_START && hourOfDay <= APPSTATE_VICKY_COMMUTE_HOUR_END;
+    bool commute = hourOfDay >= APPSTATE_COMMUTE_HOUR_START && hourOfDay <= APPSTATE_COMMUTE_HOUR_END;
     bool sleeping = hourOfDay == APPSTATE_DEEP_SLEEPING_HOUR_START-1;
+    sleeping = false;
     bool deepSleeping = hourOfDay >= APPSTATE_DEEP_SLEEPING_HOUR_START || hourOfDay <= APPSTATE_DEEP_SLEEPING_HOUR_END;
+    deepSleeping = false;
 
-    Serial.print("   UTIL: UpdateAppState - Hour=" + String(hourOfDay) 
-            + ", Sleep=" + String(sleeping) +
-            + ", DeepSleep=" + String(deepSleeping) +
-             ", Commute=" + String(commute) + " ");
+    // Serial.println("      UTIL: Updating AppState - Hour=" + String(hourOfDay) 
+    //         + ", Sleep=" + String(sleeping) +
+    //         + ", DeepSleep=" + String(deepSleeping) +
+    //          ", Commute=" + String(commute) + " ");
 
     if(commute) {
-        Serial.println("   UTIL:   > Result: Commute");
+        Serial.println("      UTIL: New App State: Commute");
         appState = CommutePage;
     } else if(sleeping) {
-        Serial.println("   UTIL:   > Result: Sleeping");
+        Serial.println("      UTIL: New App State: Sleeping");
         appState = Sleeping;
     }  else if(deepSleeping) {
-        Serial.println("   UTIL:   > Result: Deep Sleeping");
+        Serial.println("      UTIL: New App State: DEEP Sleeping");
         appState = DeepSleeping;
     } else {
         if(appState == Initializing || appState == WeatherPage) {
-            Serial.println("   UTIL:   > Result: NorthSouth");
+            Serial.println("      UTIL: New App State: NorthSouthPage");
             appState = NorthSouthPage;
         } else if(appState == NorthSouthPage) {
-            Serial.println("   UTIL:   > Result: EastWestPage");
+            Serial.println("      UTIL: New App State: EastWestPage");
             appState = EastWestPage;
-        } else { // EastWestPage 
-        Serial.println("   UTIL:   > Result: WeatherPage");
+        } else { // EastWestPage
+        Serial.println("      UTIL: New App State: WeatherPage");
             appState = WeatherPage;
         }
     }
 }
 
 void printHighWaterMarkForTask(TaskHandle_t taskHandle) {
-    Serial.print("   UTIL: Remaining Stack words for Task ");
+    Serial.print("      UTIL: Remaining Stack words for Task ");
     Serial.print(pcTaskGetName(taskHandle));
     Serial.println(" = " + String(uxTaskGetStackHighWaterMark(taskHandle)));
 }
 
 void printAvailableHeapMemory() {
-    Serial.print("   UTIL: AVAILABLE HEAP MEMORY = ");
+    Serial.print("      UTIL: AVAILABLE HEAP MEMORY = ");
     Serial.println(xPortGetFreeHeapSize());
 }

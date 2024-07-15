@@ -5,6 +5,7 @@
 #include "octranspo/Route.h"
 #include "octranspo/Trip.h"
 #include "octranspo/UITrip.h"
+#include "Config.h"
 
 class Routes {
 public:
@@ -25,6 +26,19 @@ public:
         xSemaphoreGive(mutex);
     }
 
+    bool routesAreStale() {
+        bool stale = false;
+        xSemaphoreTake(mutex, portMAX_DELAY);
+        for(const auto& route: routes) {
+            if(millis() - route.lastUpdateMillis > ROUTES_STALE_TRESHOLD_MILLIS) {
+                stale = true;
+                break;
+            }
+        }
+        xSemaphoreGive(mutex);
+        return stale;
+    }
+
     std::vector<UITrip> getSortedUITripsByDirection(RouteDirection direction) {
         xSemaphoreTake(mutex, portMAX_DELAY);
         std::vector<UITrip> uiTrips;
@@ -38,30 +52,28 @@ public:
         return uiTrips;
     }
 
-    std::vector<UITrip> getSortedUITripsForCommute() {
+    void getUITripForCommute(UITrip* uiTrip) {
         xSemaphoreTake(mutex, portMAX_DELAY);
-        std::vector<UITrip> uiTrips;
+        // UITrip uiTrip;
         for (const auto& route: routes) {
             if(route.number == "88" && route.destination == "Hurdman") {
-                for (const auto& trip: route.trips)
-                    uiTrips.push_back(UITrip(route.number, route.type, trip.actualDestination, trip.arrivals));
+                // route 88 Hurdman should always have one trip, it's always 88 Hurdman.    
+                UITrip localTrip(route.number, route.type, route.trips[0].actualDestination, route.trips[0].arrivals);
+                uiTrip = &localTrip;
                 break;
             }
         }
-        sortTrips(uiTrips);
         xSemaphoreGive(mutex);
-
-        return uiTrips;
     }
     
     void printRoutes() {
         xSemaphoreTake(mutex, portMAX_DELAY);
-        Serial.println(" ROUTES: Printing Routes:");
+        Serial.println("    ROUTES: Printing Routes:");
         for(const auto &route: routes) {
             String frequent = route.type == FrequentRoute ? "Yes" : "No";
 
             for(const auto &trip: route.trips) {
-            Serial.print(" ROUTES:   > " + route.number 
+            Serial.print("    ROUTES:   > " + route.number 
                 + " " + trip.actualDestination
                     + " (Frequent=" + frequent + ") in: ");
 

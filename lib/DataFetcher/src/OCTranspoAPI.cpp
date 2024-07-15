@@ -11,33 +11,19 @@ OCTranspoAPI::OCTranspoAPI(WiFiClientSecure* wifiClient, HTTPClient* httpClient,
     _routes = routes;
 }
 
-void OCTranspoAPI::fetchRoutes() {        
+void OCTranspoAPI::fetchRoutes(bool doItQuickly) {    
     for (const auto &route : _routes->routes) {
-        vTaskDelay(pdMS_TO_TICKS(OCTRANSPO_DELAY_BETWEEN_FETCHES_MS));
+        if(!doItQuickly)
+            vTaskDelay(pdMS_TO_TICKS(OCTRANSPO_DELAY_BETWEEN_FETCHES_MS));
+        else
+            vTaskDelay(pdMS_TO_TICKS(500));
         fetchTripsFor(route.stopNumber, route.number, route.destination);
     }
     _routes->printRoutes();
 }
 
-void OCTranspoAPI::startFetchRoutesTask() {
-    BaseType_t result = xTaskCreatePinnedToCore(fetchRoutesTask, "FetchRoutesTask", 
-                STACK_DEPTH_FETCH_ROUTES_TASK, this, TASK_PRIORITY_NETWORK, &fetchRoutesTaskHandle, CORE_ID_NETWORK);
-    if(result == pdPASS) {
-        Serial.println("OCT-API: FetchRoutesTask launched");
-    } else if(result == errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY) {
-        Serial.print("OCT-API: ERROR FetchRoutesTask creation failed due to insufficient memory! HEAP MEM=");
-        Serial.println(xPortGetFreeHeapSize());
-        vTaskDelay(pdMS_TO_TICKS(5000));
-        ESP.restart();
-    } else {
-        Serial.print("OCT-API: ERROR Task creation failed!!!");
-        vTaskDelay(pdMS_TO_TICKS(5000));
-        ESP.restart();
-    }
-}
-
 void OCTranspoAPI::fetchTripsFor(const String& stopNumber, const String& routeNumber, const String& routeDestination) {
-    Serial.println("OCT-API: Fetching Trips for Stop#" + stopNumber + " Route#"+ routeNumber);
+    Serial.println("  OCTR-API: Fetching Trips for Stop#" + stopNumber + " Route#"+ routeNumber);
     String endpoint = String(OCTRANSPO_API_NEXT_TRIPS_FOR_STOP_ENDPOINT);
     endpoint += "&stopNo=" + stopNumber + "&routeNo=" + routeNumber;
 
@@ -82,10 +68,10 @@ void OCTranspoAPI::fetchTripsFor(const String& stopNumber, const String& routeNu
 
             _routes->replaceTripsForRoute(routeNumber, routeDestination, flatTrips);
         } else {
-            Serial.println("OCT-API: WARNING API returned INVALID JSON");
+            Serial.println("  OCTR-API: WARNING API returned INVALID JSON");
         }
     } else {
-        Serial.println("OCT-API: WARNING API returned NOT OK code ("+ String(httpCode) + ")");
+        Serial.println("  OCTR-API: WARNING API returned NOT OK code ("+ String(httpCode) + ")");
     }
     _httpClient->end();
 }

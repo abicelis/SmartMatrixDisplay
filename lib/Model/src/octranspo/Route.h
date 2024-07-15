@@ -2,8 +2,9 @@
 #define ROUTE_H
 #include <Arduino.h>
 #include <vector>
-#include "octranspo/Trip.h"
 #include "Model.h"
+#include "octranspo/Trip.h"
+
 
 enum RouteDirection { NorthSouth, EastWest };
 
@@ -40,6 +41,7 @@ public:
 protected:
     void replaceTrips(std::vector<std::tuple<String, int, bool, TripArrivalLocation>> flatTrips) {
         trips.clear();
+        lastUpdateMillis = millis();
 
         for (const auto &flatTrip : flatTrips) {
             TripArrival tripArrival = TripArrival(std::get<1>(flatTrip), std::get<2>(flatTrip), std::get<3>(flatTrip));

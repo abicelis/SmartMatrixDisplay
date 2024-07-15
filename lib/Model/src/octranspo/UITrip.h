@@ -14,7 +14,7 @@ public:
         String actualDestination, std::vector<TripArrival> inputArrivals) : Trip(actualDestination) {
         this->routeNumber = routeNumber;
         this->routeType = routeType;
-        this->arrivals.insert(arrivals.begin(), inputArrivals.begin(), inputArrivals.end());
+        this->arrivals = inputArrivals;
     }
 };
 #endif // TRIP_H
