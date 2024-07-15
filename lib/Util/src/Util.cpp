@@ -71,9 +71,9 @@ void updateAppState(AppState& appState) {
     int hourOfDay = currentHourOfDay();
     bool commute = hourOfDay >= APPSTATE_COMMUTE_HOUR_START && hourOfDay <= APPSTATE_COMMUTE_HOUR_END;
     bool sleeping = hourOfDay == APPSTATE_DEEP_SLEEPING_HOUR_START-1;
-    sleeping = false;
+    // sleeping = false;
     bool deepSleeping = hourOfDay >= APPSTATE_DEEP_SLEEPING_HOUR_START || hourOfDay <= APPSTATE_DEEP_SLEEPING_HOUR_END;
-    deepSleeping = false;
+    // deepSleeping = false;
 
     // Serial.println("      UTIL: Updating AppState - Hour=" + String(hourOfDay) 
     //         + ", Sleep=" + String(sleeping) +

@@ -29,8 +29,14 @@ public:
     bool routesAreStale() {
         bool stale = false;
         xSemaphoreTake(mutex, portMAX_DELAY);
-        for(const auto& route: routes) {
-            if(millis() - route.lastUpdateMillis > ROUTES_STALE_TRESHOLD_MILLIS) {
+        Serial.println(routes.size());
+        for(const auto &route: routes) {
+            unsigned long diff = millis() - route.lastUpdateMillis;
+            Serial.print("    ROUTES: Checking staleness of ");
+            Serial.print(route.number + " " + route.destination);
+            Serial.println(" is " + String(diff));
+            if(diff > ROUTES_STALE_TRESHOLD_MILLIS) {
+                Serial.println("    ROUTES: STALEEE!");
                 stale = true;
                 break;
             }

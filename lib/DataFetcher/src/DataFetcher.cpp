@@ -11,6 +11,7 @@
 DataFetcher::DataFetcher(WiFiClientSecure* wifiClient, HTTPClient* httpClient, Preferences* preferences,
             Routes* routes, Forecast* forecast) {
 
+    _routes = routes;
     _ocTranspoAPI = new OCTranspoAPI(wifiClient, httpClient, routes);
     _openMeteoAPI = new OpenMeteoAPI(wifiClient, httpClient, forecast);
     _accuweatherAPI = new AccuweatherAPI(wifiClient, httpClient, preferences, forecast);
