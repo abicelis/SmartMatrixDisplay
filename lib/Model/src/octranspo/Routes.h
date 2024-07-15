@@ -58,18 +58,22 @@ public:
         return uiTrips;
     }
 
-    void getUITripForCommute(UITrip* uiTrip) {
+    // Note: Make sure to clean up (delete) 
+    // the UITrip* returned by this function 
+    // when you're done with it.
+    UITrip* getUITripForCommute() {
+        UITrip* localTrip = nullptr;
         xSemaphoreTake(mutex, portMAX_DELAY);
-        // UITrip uiTrip;
         for (const auto& route: routes) {
             if(route.number == "88" && route.destination == "Hurdman") {
+                Serial.println("evaling " + String(route.number) + String(route.destination) );
                 // route 88 Hurdman should always have one trip, it's always 88 Hurdman.    
-                UITrip localTrip(route.number, route.type, route.trips[0].actualDestination, route.trips[0].arrivals);
-                uiTrip = &localTrip;
-                break;
+                localTrip = new UITrip(route.number, route.type, route.trips[0].actualDestination, route.trips[0].arrivals);
+                
             }
         }
         xSemaphoreGive(mutex);
+        return localTrip;
     }
     
     void printRoutes() {

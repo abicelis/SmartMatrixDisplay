@@ -79,11 +79,9 @@ void updateAppState(AppState& appState) {
     int hour = currentHourOfDay();
     int minute = currentMinute();
     if(hour == APPSTATE_WAKING_UP_HOUR_START && minute >= APPSTATE_WAKING_UP_MINUTE_START) {
-        Serial.println("      UTIL: New App State: Waking Up");
-        appState = WakingUp;
+        updateAppStateIfDifferentThan(appState, WakingUp);
     } else if (hour == APPSTATE_COMMUTE_HOUR_START) {
-        Serial.println("      UTIL: New App State: Commute");
-        appState = CommutePage;
+        updateAppStateIfDifferentThan(appState, CommutePage);
     } else if (hour >= APPSTATE_NORMAL_HOUR_START && hour < APPSTATE_SLEEPING_HOUR_START) {
         if(appState == NorthSouthPage) {
             Serial.println("      UTIL: New App State: EastWestPage");
@@ -96,11 +94,16 @@ void updateAppState(AppState& appState) {
             appState = NorthSouthPage;
         }
     } else if (hour == APPSTATE_SLEEPING_HOUR_START) {
-        Serial.println("      UTIL: New App State: Sleeping");
-        appState = Sleeping;
+        updateAppStateIfDifferentThan(appState, Sleeping); 
     } else {
-        Serial.println("      UTIL: New App State: DEEP Sleeping");
-        appState = DeepSleeping;
+        updateAppStateIfDifferentThan(appState, DeepSleeping);
+    }
+}
+
+void updateAppStateIfDifferentThan(AppState& currentAppState, AppState newAppState) {
+    if(currentAppState != newAppState) {
+        currentAppState = newAppState;
+        Serial.println("      UTIL: New App State: " + appStateToString(currentAppState));
     }
 }
 
@@ -113,4 +116,28 @@ void printHighWaterMarkForTask(TaskHandle_t taskHandle) {
 void printAvailableHeapMemory() {
     Serial.print("      UTIL: AVAILABLE HEAP MEMORY = ");
     Serial.println(xPortGetFreeHeapSize());
+}
+
+String appStateToString(AppState appState) { 
+    if(appState == Initializing) {
+        return "Initializing";
+    } else if(appState == WakingUp) {
+        return "WakingUp";
+    } else if(appState == CommutePage) {
+        return "CommutePage";
+    } else if(appState == NorthSouthPage) {
+        return "NorthSouthPage";
+    } else if(appState == EastWestPage) {
+        return "EastWestPage";
+    } else if(appState == WeatherPage) {
+        return "WeatherPage";
+    } else if(appState == Sleeping) {
+        return "Sleeping";
+    } else if(appState == DeepSleeping) {
+        return "DeepSleeping";
+    } else {
+        Serial.println("     MODEL: ERROR appStateToString(). Restarting ESP");
+        ESP.restart();
+        return "";
+    } 
 }

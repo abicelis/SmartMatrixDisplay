@@ -8,6 +8,8 @@
 #include "OCTranspoAPI.h"
 #include "OpenMeteoAPI.h"
 #include "AccuweatherAPI.h"
+#include "Util.h"
+#include <Arduino.h>
 
 class DataFetcher {
     public:
@@ -31,8 +33,13 @@ class DataFetcher {
             while(true) {
 
                 if(*_this->_appState != Sleeping && *_this->_appState != DeepSleeping) {
+                    // Serial.println("------- HEAP MEM fetchRoutes.   HEAP= " + String(xPortGetFreeHeapSize()) + " HWM=" + String(uxTaskGetStackHighWaterMark(_this->taskHandle)));
                     _this->_ocTranspoAPI->fetchRoutes(false);
+
+                    // Serial.println("------- HEAP MEM fetchAQI.   HEAP= " + String(xPortGetFreeHeapSize()) + " HWM=" + String(uxTaskGetStackHighWaterMark(_this->taskHandle)));
                     _this->_openMeteoAPI->fetchAQI();
+
+                    // Serial.println("------- HEAP MEM fetchForecast.   HEAP= " + String(xPortGetFreeHeapSize()) + " HWM=" + String(uxTaskGetStackHighWaterMark(_this->taskHandle)));
                     _this->_accuweatherAPI->fetchForecast();
 
                     if(_this->_routes->routesAreStale()) {
@@ -40,8 +47,8 @@ class DataFetcher {
                         ESP.restart();
                     }
                 } else {
-                    Serial.println(" DATAFTCHR: SLEEPING 5 seconds");
-                    vTaskDelay(pdMS_TO_TICKS(5000));
+                    // Sleep for a minute
+                    vTaskDelay(pdMS_TO_TICKS(60000));
                 }
             }
         }

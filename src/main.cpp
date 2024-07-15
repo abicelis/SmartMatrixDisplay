@@ -168,11 +168,11 @@ void loop() {
         
         updateAppState(appState);
         if (appState == Sleeping) {
-            Serial.println("      MAIN: Change to Sleeping");
+            Serial.println("      MAIN: State is Sleeping");
             display.drawSleepingPage();
             nextPageMillis = currentMillis + 3600000; // Sleep for 1 hour
         } else if (appState == DeepSleeping) {
-            Serial.println("      MAIN: Change to DEEP Sleeping");
+            Serial.println("      MAIN: State is DEEP Sleeping");
             display.clearScreen();
             // TODO Stay in this state for WAY longer, 
             // TODO But make sure to set nextPageMillis so that we immediately wake up when we need to
@@ -181,31 +181,32 @@ void loop() {
             // also consider shutting down wifi and other things in this state..?
             nextPageMillis = currentMillis + INTERVAL_PAGE_LIFETIME;
         } else {
-            dataFetcher.startFetcherTask();
             char currentTime[6];
             currentHourMinute(currentTime, sizeof(currentTime));
 
 
             if(appState == CommutePage) {
-                Serial.println("      MAIN: Change to CommutePage");
+                Serial.println("      MAIN: State is CommutePage");
                 UITrip* uiTrip;
-                routes.getUITripForCommute(uiTrip);
-                if(uiTrip == NULL) {
+                uiTrip = routes.getUITripForCommute();
+                if(uiTrip == nullptr) {
                     Serial.println("      MAIN: ERROR getting Commute UITrip from Routes!");
                     ESP.restart();
                 }
                 UIForecast uiForecast = forecast.getUIForecast();
                 display.drawCommutePage(*uiTrip, uiForecast, currentTime);
+                delete uiTrip;
+
             } else if(appState == WeatherPage) {
-                Serial.println("      MAIN: Change to WeatherPage");
+                Serial.println("      MAIN: State is WeatherPage");
                 UIForecast uiForecast = forecast.getUIForecast();
                 display.drawWeatherPage(uiForecast, currentTime);
             } else if(appState == NorthSouthPage) {
-                Serial.println("      MAIN: Change to NorthSouthPage");
+                Serial.println("      MAIN: State is NorthSouthPage");
                 std::vector<UITrip> uiTrips = routes.getSortedUITripsByDirection(NorthSouth);
                 display.drawTripsPage(uiTrips, appState, currentTime);
             }  else if(appState == EastWestPage) {
-                Serial.println("      MAIN: Change to EastWestPage");
+                Serial.println("      MAIN: State is EastWestPage");
                 std::vector<UITrip> uiTrips = routes.getSortedUITripsByDirection(EastWest);
                 display.drawTripsPage(uiTrips, appState, currentTime);
             }
