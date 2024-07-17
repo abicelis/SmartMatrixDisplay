@@ -31,6 +31,7 @@ class MatrixDisplay {
         void drawWeatherPage(UIForecast& forecast, const char* currentTime);
         void drawSleepingPage();
         void drawButtonPressedFeedback();
+        void drawSpecial();
 
         void drawClock(const char* currentTime);
         void drawPageBar(float percentComplete);

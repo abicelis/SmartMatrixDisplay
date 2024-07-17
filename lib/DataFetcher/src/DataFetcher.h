@@ -31,8 +31,7 @@ class DataFetcher {
         static void fetcherTask(void* pvParameters) {
             DataFetcher *_this = (DataFetcher *) pvParameters;   
             while(true) {
-
-                if(*_this->_appState != Sleeping && *_this->_appState != DeepSleeping) {
+                if(inAContentPageOrWakingUp(*_this->_appState)) {
                     // Serial.println("------- HEAP MEM fetchRoutes.   HEAP= " + String(xPortGetFreeHeapSize()) + " HWM=" + String(uxTaskGetStackHighWaterMark(_this->taskHandle)));
                     _this->_ocTranspoAPI->fetchRoutes(false);
 

@@ -33,7 +33,7 @@ void DataFetcher::fetchDataSynchronously() {
 
 void DataFetcher::startFetcherTask() {
     BaseType_t result = xTaskCreatePinnedToCore(fetcherTask, "FetcherTask", 
-                STACK_DEPTH_DATA_FETCHER_TASK, this, TASK_PRIORITY_NETWORK, &taskHandle, CORE_ID_NETWORK);
+                STACK_DEPTH_DATA_FETCHER_TASK, this, TASK_PRIORITY_NETWORK, &taskHandle, CORE_ID_0);
     if(result == pdPASS) {
         Serial.println("  OCTR-API: FetcherTask launched");
     } else if(result == errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY) {

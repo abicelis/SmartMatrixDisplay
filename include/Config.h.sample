@@ -21,7 +21,7 @@
 #define ACCUWEATHER_API_12H_FORECAST "https://dataservice.accuweather.com/forecasts/v1/hourly/12hour/<your_location>?apikey=<your_api_key>&details=true&metric=true"
 #define ACCUWEATHER_API_ENDPOINT_TRIES 2
 
-#define ROUTES_STALE_TRESHOLD_MILLIS 120000
+#define ROUTES_STALE_TRESHOLD_MILLIS 240000
 
 // NTP
 #define NTP_SERVER "pool.ntp.org"
@@ -151,14 +151,16 @@
 #define STACK_DEPTH_EXTRA_WEATHER_DATA_TASK 1500      // Remaining stack ~500 words
 #define STACK_DEPTH_BRIGHTNESS_TASK 700               // Remaining stack ~200 words
 #define STACK_DEPTH_SLEEPING_ANIMATION_TASK 800       // Remaining stack ~200 words
+#define STACK_DEPTH_BUTTON_LONG_TAP_TASK 500
 
-#define TASK_PRIORITY_UI        1
-#define TASK_PRIORITY_NETWORK   3
+#define TASK_PRIORITY_REALTIME          1
+#define TASK_PRIORITY_HIGH              2
+#define TASK_PRIORITY_NETWORK           3
 
-// Wifi uses Core0, use Core0 sparingly, with lower-priority tasks.
-// Use Core1 for realtime stuff (UI)
-#define CORE_ID_UI              1
-#define CORE_ID_NETWORK         0
+// Prefer using Core 1 for everything.
+// WiFi runs on Core 0. If you are using Core0, run low-priority tasks.
+#define CORE_ID_1   1
+#define CORE_ID_0   0
 
 
 // Colors

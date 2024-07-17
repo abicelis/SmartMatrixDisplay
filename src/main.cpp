@@ -12,12 +12,15 @@
 #include "Hysteresis.h"
 #include "MatrixDisplay.h"
 #include "Util.h"
+#include "ButtonHandler.h"
 
 #define buttonPin 33
 
 Routes routes;
 Forecast forecast;
 AppState appState = Initializing;
+std::atomic<bool> buttonTapped;
+std::atomic<bool> buttonLongTapped;
 
 Preferences preferences;
 WiFiClientSecure wifiClient;
@@ -25,24 +28,14 @@ HTTPClient httpClient;
 MatrixDisplay display;
 DataFetcher dataFetcher(&wifiClient, &httpClient, &preferences, &routes, &forecast, &appState);
 Hysteresis hysteresis;
+ButtonHandler buttonHandler(BUTTON_PIN, &buttonTapped, &buttonLongTapped);
 
-volatile unsigned long lastButtonInterruptMillis = 0;
-volatile bool buttonPressed = false;
 volatile uint32_t currentMillis = 0;
 volatile uint32_t nextPageMillis = 0;
 uint32_t pageChangedMillis = 0;
 uint32_t previousLightSensorUpdateMillis = 0;
 uint32_t previousClockUpdateMillis = 0;
 uint32_t previousPageBarUpdateMillis = 0;
-
-void IRAM_ATTR buttonInterrupt() {
-  unsigned long interruptMillis = millis();
-  if (interruptMillis - lastButtonInterruptMillis > 400) {
-    Serial.println("      MAIN: Button pressed!");
-    buttonPressed = true;
-    lastButtonInterruptMillis = interruptMillis;
-  }
-}
 
 void setup() {
     randomSeed(analogRead(0)); // Seed pseudorandom random()
@@ -54,6 +47,9 @@ void setup() {
     Serial.println("-----------------------------------");
     Serial.println("-----------------------------------");
 
+    //Button
+    buttonHandler.start();
+
     // Display
     display.begin(R1_PIN, G1_PIN, B1_PIN, R2_PIN, G2_PIN, B2_PIN, A_PIN, B_PIN, C_PIN, D_PIN, E_PIN, LAT_PIN, OE_PIN, CLK_PIN, PANEL_RES_X, PANEL_RES_Y, PANEL_CHAIN);
     // display.testDrawWeatherIcons(); while(true) {}
@@ -61,10 +57,6 @@ void setup() {
     // Hysteresis
     hysteresis.begin(4096, LIGHT_SENSOR_VALUE_MAX, LIGHT_SENSOR_VALUE_MIN, 
                      LIGHT_SENSOR_SAMPLES, DISPLAY_HYSTERESIS_BRIGHTNESS_STEPS-2, DISPLAY_HYSTERESIS_GAP_SIZE);
-
-    // 'Next screen' button interrupt
-    pinMode(buttonPin, INPUT);
-    attachInterrupt(digitalPinToInterrupt(buttonPin), buttonInterrupt, RISING);
 
     // WiFi
     uint8_t loadingPercent = 10;
@@ -136,6 +128,8 @@ void setup() {
 }
 
 void loop() {
+    bool skipToNextPage = false;
+
     if(currentMillis - previousLightSensorUpdateMillis >= INTERVAL_UPDATE_LIGHT_SENSOR) {
         uint16_t newSample = analogRead(A0);
         uint16_t outValue = hysteresis.add(newSample);
@@ -157,13 +151,33 @@ void loop() {
             display.drawPageBar(progressPercentage);
             previousPageBarUpdateMillis = currentMillis;
         }
+
+        if(buttonTapped.load()) {
+            skipToNextPage = true;
+            buttonTapped.store(false);
+        }
+
+        if(buttonLongTapped.load()) {
+            Serial.println("GAME MODE ON!");
+            appState = GamePage;
+            buttonLongTapped.store(false);
+        }
     }
 
-    if(currentMillis >= nextPageMillis || buttonPressed) {
-        if(buttonPressed) {
+    if(appState == GamePage) {
+        if(buttonLongTapped.load()) {
+            Serial.println("GAME MODE OFF!");
+            appState = Initializing;
+            buttonLongTapped.store(false);
+            nextPageMillis = currentMillis; // Force a Content Page
+        } else {
+            display.drawSpecial();
+        }
+    } else if(currentMillis >= nextPageMillis || skipToNextPage) {
+
+        if(skipToNextPage) {
             Serial.println("      MAIN: Changing page due to button press!");
-            display.drawButtonPressedFeedback();
-            buttonPressed = false;
+            display.drawButtonPressedFeedback();  
         }
         
         updateAppState(appState);
@@ -215,7 +229,7 @@ void loop() {
             nextPageMillis = currentMillis + INTERVAL_PAGE_LIFETIME;
         }
     }
-        
+    
     vTaskDelay(pdMS_TO_TICKS(10));  // Healthy sleep
     currentMillis = millis();       // Refresh for next loop
 }

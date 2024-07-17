@@ -314,6 +314,16 @@ void MatrixDisplay::drawSleepingPage() {
     // Serial.println("SleepingAnimationTaskFunction LAUNCHED");
 }
 
+void MatrixDisplay::drawSpecial() {
+    fadeOutScreen();
+    clearScreen();
+
+    _dma_display->drawBitmap(64-3, 32-10, icon_Bus, 7, 9, _colorTextPrimary);
+    drawText(TRIPS_PAGE_TITLE_X_POSITION, TRIPS_PAGE_TITLE_Y_POSITION, "Matrix Display v1");
+
+    fadeInScreen();
+}
+
 void MatrixDisplay::drawButtonPressedFeedback() {
     drawPageBar(100);
     // uint8_t startX = 20;

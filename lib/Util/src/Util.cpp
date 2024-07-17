@@ -62,7 +62,11 @@ String hourNumericToPretty(uint8_t hour) {
 
 
 bool inAContentPage(AppState& appState) {
-    return (appState == CommutePage || appState == NorthSouthPage || appState == EastWestPage || appState == WeatherPage);
+    return appState == CommutePage || appState == NorthSouthPage || appState == EastWestPage || appState == WeatherPage;
+}
+
+bool inAContentPageOrWakingUp(AppState& appState) {
+    return inAContentPage(appState) || appState == WakingUp;
 }
 
 void updateAppState(AppState& appState) {

@@ -12,6 +12,7 @@ void currentHourMinute(char* buffer, size_t bufferSize);
 String hourNumericToPretty(uint8_t hour);
 
 bool inAContentPage(AppState& appState);
+bool inAContentPageOrWakingUp(AppState& appState);
 
 void updateAppState(AppState& appState);
 void updateAppStateIfDifferentThan(AppState& currentAppState, AppState newAppState);
