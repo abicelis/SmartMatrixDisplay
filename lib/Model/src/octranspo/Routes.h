@@ -29,7 +29,6 @@ public:
     bool routesAreStale() {
         bool stale = false;
         xSemaphoreTake(mutex, portMAX_DELAY);
-        Serial.println(routes.size());
         for(const auto &route: routes) {
             unsigned long diff = millis() - route.lastUpdateMillis;
             Serial.print("    ROUTES: Checking staleness of ");

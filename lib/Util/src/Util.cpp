@@ -7,43 +7,49 @@
 #include "octranspo/Route.h"
 #include "Util.h"
 
+struct tm *applocaltime (const time_t *_timer) {
+    struct tm *timeinfo = localtime(_timer);
+    // timeinfo->tm_hour = timeinfo->tm_hour-5;
+    return timeinfo;
+}
+
 uint8_t currentHourOfDay() {
     time_t now;
     time(&now);
-    struct tm *timeinfo = localtime(&now);
+    struct tm *timeinfo = applocaltime(&now);
     uint8_t hod = timeinfo->tm_hour;
     return hod;
 }
 uint8_t currentMinute() {
     time_t now;
     time(&now);
-    struct tm *timeinfo = localtime(&now);
+    struct tm *timeinfo = applocaltime(&now);
     uint8_t min = timeinfo->tm_min;
     return min;
 }
 uint8_t currentDayOfMonth() {
     time_t now;
     time(&now);
-    struct tm *timeinfo = localtime(&now);
+    struct tm *timeinfo = applocaltime(&now);
     uint8_t dom = timeinfo->tm_mday;
     return dom;
 }
 void currentDateFull(char* buffer, size_t bufferSize) {
     time_t now;
     time(&now);
-    struct tm * timeinfo = localtime(&now);
+    struct tm * timeinfo = applocaltime(&now);
     strftime (buffer, bufferSize, "%Y-%m-%d %H:%M", timeinfo);
 }
 void currentDateShort(char* buffer, size_t bufferSize) {
     time_t now;
     time(&now);
-    struct tm * timeinfo = localtime(&now);
+    struct tm * timeinfo = applocaltime(&now);
     strftime (buffer, bufferSize, "%a, %d %b", timeinfo);
 }
 void currentHourMinute(char* buffer, size_t bufferSize) {
     time_t now;
     time(&now);
-    struct tm * timeinfo = localtime(&now);
+    struct tm * timeinfo = applocaltime(&now);
     strftime (buffer, bufferSize, "%I:%M", timeinfo);
 
     if (buffer[0] == '0')   // HH:MM format, Remove first 0 if necessary. e.g '08:03\0' -> '8:03\0'  (\0 = null char)
@@ -75,36 +81,38 @@ void updateAppState(AppState& appState) {
     // appState = NorthSouthPage;
     // return;
 
-
     int hour = currentHourOfDay();
     int minute = currentMinute();
+    Serial.print("      UTIL: AppState for " + String(hour) + ":" + String(minute));
     if(hour == APPSTATE_WAKING_UP_HOUR_START && minute >= APPSTATE_WAKING_UP_MINUTE_START) {
-        updateAppStateIfDifferentThan(appState, WakingUp);
+        Serial.println(" is WakingUp");
+        appState = WakingUp;
     } else if (hour == APPSTATE_COMMUTE_HOUR_START) {
-        updateAppStateIfDifferentThan(appState, CommutePage);
+        Serial.println(" is CommutePage");
+        appState = CommutePage;
     } else if (hour >= APPSTATE_NORMAL_HOUR_START && hour < APPSTATE_SLEEPING_HOUR_START) {
         if(appState == NorthSouthPage) {
-            Serial.println("      UTIL: New App State: EastWestPage");
+            Serial.println(" is EastWestPage");
             appState = EastWestPage;
         } else if(appState == EastWestPage) {
-            Serial.println("      UTIL: New App State: WeatherPage");
+            Serial.println(" is WeatherPage");
             appState = WeatherPage;
         } else {
-            Serial.println("      UTIL: New App State: NorthSouthPage");
+            Serial.println(" is NorthSouthPage");
             appState = NorthSouthPage;
         }
     } else if (hour == APPSTATE_SLEEPING_HOUR_START) {
-        updateAppStateIfDifferentThan(appState, Sleeping); 
+        Serial.println(" is Sleeping");
+        appState = Sleeping;
     } else {
-        updateAppStateIfDifferentThan(appState, DeepSleeping);
+        Serial.println(" is DeepSleeping");
+        appState = DeepSleeping;
     }
 }
 
 void updateAppStateIfDifferentThan(AppState& currentAppState, AppState newAppState) {
-    if(currentAppState != newAppState) {
+    if(currentAppState != newAppState)
         currentAppState = newAppState;
-        Serial.println("      UTIL: New App State: " + appStateToString(currentAppState));
-    }
 }
 
 void printHighWaterMarkForTask(TaskHandle_t taskHandle) {

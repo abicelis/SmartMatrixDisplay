@@ -43,11 +43,12 @@ class DataFetcher {
                     _this->_accuweatherAPI->fetchForecast();
 
                     if(_this->_routes->routesAreStale()) {
-                        Serial.println(" DATAFTCHR: ERROR routes are stale, investigate this! Restarting ESP.");
+                        Serial.println(" DATAFTCHR: ERROR routes are stale! Restarting ESP");
                         ESP.restart();
                     }
                 } else {
                     // Sleep for a minute
+                    Serial.println(" DATAFTCHR: SLEEP");
                     vTaskDelay(pdMS_TO_TICKS(60000));
                 }
             }
