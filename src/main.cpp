@@ -10,7 +10,8 @@
 #include "Config.h"
 #include "Model.h"
 #include "Hysteresis.h"
-#include "MatrixDisplay.h"
+#include "Display.h"
+#include "PageRenderer.h"
 #include "Util.h"
 #include "ButtonHandler.h"
 
@@ -25,10 +26,11 @@ std::atomic<bool> buttonLongTapped;
 Preferences preferences;
 WiFiClientSecure wifiClient;
 HTTPClient httpClient;
-MatrixDisplay display;
+Display display;
+PageRenderer pageRenderer(&display);
 DataFetcher dataFetcher(&wifiClient, &httpClient, &preferences, &routes, &forecast, &appState);
 Hysteresis hysteresis;
-ButtonHandler buttonHandler(BUTTON_PIN, &buttonTapped, &buttonLongTapped);
+ButtonHandler buttonHandler(CAPACITIVE_BUTTON, &buttonTapped, &buttonLongTapped);
 
 volatile uint32_t currentMillis = 0;
 volatile uint32_t nextPageMillis = 0;
@@ -60,7 +62,7 @@ void setup() {
 
     // WiFi
     uint8_t loadingPercent = 10;
-    display.drawInitializationPage(loadingPercent);
+    pageRenderer.drawInitializationPage(loadingPercent);
     WiFi.mode(WIFI_STA);
     WiFi.begin(SSID_NAME, SSID_PASSWORD);
     Serial.print("     SETUP: Connecting to WiFi..");
@@ -69,7 +71,7 @@ void setup() {
         Serial.print(".");
         vTaskDelay(pdMS_TO_TICKS(200));
         if(loadingPercent <= 20)
-            display.drawInitializationPage(++loadingPercent);
+            pageRenderer.drawInitializationPage(++loadingPercent);
     }
     Serial.println("DONE.");
     Serial.print("     SETUP:   > Local IP: ");
@@ -82,7 +84,7 @@ void setup() {
 
     // Configure NTP
     loadingPercent = 30;
-    display.drawInitializationPage(loadingPercent);
+    pageRenderer.drawInitializationPage(loadingPercent);
     Serial.print("     SETUP: Grabbing time from NTP..");
     configTime(NTP_GMT_OFFSET_SEC, NTP_DAYLIGHT_OFFSET_SEC, NTP_SERVER);
     time_t now;
@@ -90,7 +92,7 @@ void setup() {
         Serial.print(".");
         vTaskDelay(pdMS_TO_TICKS(200));
         if(loadingPercent <= 50)
-            display.drawInitializationPage(++loadingPercent);
+            pageRenderer.drawInitializationPage(++loadingPercent);
     }
     Serial.println("DONE.");
     char timeStringBuff[20];
@@ -110,13 +112,13 @@ void setup() {
         Serial.println("     SETUP:   > Forecast NOT loaded");
     }
     loadingPercent = 70;
-    display.drawInitializationPage(loadingPercent);
+    pageRenderer.drawInitializationPage(loadingPercent);
 
     // Fetch initial data
     Serial.println("     SETUP: Fetching initial data..");
     dataFetcher.fetchDataSynchronously();
     loadingPercent = 90;
-    display.drawInitializationPage(loadingPercent);
+    pageRenderer.drawInitializationPage(loadingPercent);
     Serial.println("DONE.");
 
     // START
@@ -141,14 +143,14 @@ void loop() {
         if(currentMillis - previousClockUpdateMillis >= INTERVAL_UPDATE_CLOCK) {
             char currentTime[6];
             currentHourMinute(currentTime, sizeof(currentTime));
-            display.drawClock(currentTime);
+            pageRenderer.drawClock(currentTime);
             previousClockUpdateMillis = currentMillis;
         }
 
         if(currentMillis - previousPageBarUpdateMillis >= INTERVAL_UPDATE_PAGE_BAR) {
             uint32_t progressMillis = currentMillis - pageChangedMillis;
             float progressPercentage = (float)progressMillis/INTERVAL_PAGE_LIFETIME;
-            display.drawPageBar(progressPercentage);
+            pageRenderer.drawPageBar(progressPercentage);
             previousPageBarUpdateMillis = currentMillis;
         }
 
@@ -171,23 +173,23 @@ void loop() {
             buttonLongTapped.store(false);
             nextPageMillis = currentMillis; // Force a Content Page
         } else {
-            display.drawSpecial();
+            pageRenderer.drawSpecial();
         }
     } else if(currentMillis >= nextPageMillis || skipToNextPage) {
 
         if(skipToNextPage) {
             Serial.println("      MAIN: Changing page due to button press!");
-            display.drawButtonPressedFeedback();  
+            pageRenderer.drawButtonPressedFeedback();  
         }
         
         updateAppState(appState);
         if (appState == Sleeping) {
             Serial.println("      MAIN: State is Sleeping");
-            display.drawSleepingPage();
+            pageRenderer.drawSleepingPage();
             nextPageMillis = currentMillis + 3600000; // Sleep for 1 hour
         } else if (appState == DeepSleeping) {
             Serial.println("      MAIN: State is DEEP Sleeping");
-            display.clearScreen();
+            pageRenderer.clearScreen();
             // TODO Stay in this state for WAY longer, 
             // TODO But make sure to set nextPageMillis so that we immediately wake up when we need to
             // At APPSTATE_DEEP_SLEEPING_HOUR_END
@@ -208,21 +210,21 @@ void loop() {
                     ESP.restart();
                 }
                 UIForecast uiForecast = forecast.getUIForecast();
-                display.drawCommutePage(*uiTrip, uiForecast, currentTime);
+                pageRenderer.drawCommutePage(*uiTrip, uiForecast, currentTime);
                 delete uiTrip;
 
             } else if(appState == WeatherPage) {
                 Serial.println("      MAIN: State is WeatherPage");
                 UIForecast uiForecast = forecast.getUIForecast();
-                display.drawWeatherPage(uiForecast, currentTime);
+                pageRenderer.drawWeatherPage(uiForecast, currentTime);
             } else if(appState == NorthSouthPage) {
                 Serial.println("      MAIN: State is NorthSouthPage");
                 std::vector<UITrip> uiTrips = routes.getSortedUITripsByDirection(NorthSouth);
-                display.drawTripsPage(uiTrips, appState, currentTime);
+                pageRenderer.drawTripsPage(uiTrips, appState, currentTime);
             }  else if(appState == EastWestPage) {
                 Serial.println("      MAIN: State is EastWestPage");
                 std::vector<UITrip> uiTrips = routes.getSortedUITripsByDirection(EastWest);
-                display.drawTripsPage(uiTrips, appState, currentTime);
+                pageRenderer.drawTripsPage(uiTrips, appState, currentTime);
             }
         
             pageChangedMillis = currentMillis;

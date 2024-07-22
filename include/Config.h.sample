@@ -112,7 +112,7 @@
 
 
 
-// Display
+// Hardware
 #define R1_PIN 25
 #define G1_PIN 26
 #define B1_PIN 27
@@ -141,7 +141,8 @@
 #define DISPLAY_BRIGHTNESS_STEP_SIZE (DISPLAY_BRIGHTNESS_MAX - DISPLAY_BRIGHTNESS_MIN) / DISPLAY_HYSTERESIS_BRIGHTNESS_STEPS
 #define DISPLAY_HYSTERESIS_GAP_SIZE 100
 
-
+#define CAPACITIVE_BUTTON 33
+#define BUTTON_LONG_TAP_DURATION_MS 300
 
 // Memory management - Change these if you know what you're doing
 // This stack depth is specified in words, i believe 1 word = 4 bytes on the ESP32
