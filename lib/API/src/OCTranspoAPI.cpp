@@ -1,6 +1,5 @@
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
-#include <ArduinoJson.h>
 #include <vector>
 #include <Config.h>
 #include "OCTranspoAPI.h"
@@ -23,7 +22,7 @@ void OCTranspoAPI::fetchRoutes(bool doItQuickly) {
 }
 
 void OCTranspoAPI::fetchTripsFor(const String& stopNumber, const String& routeNumber, const String& routeDestination) {
-    Serial.println("  OCTR-API: Fetching Trips for Stop#" + stopNumber + " Route#"+ routeNumber);
+    Serial.println("  OCTR-API: Fetching Trips for Stop#" + stopNumber + " Route#"+ routeNumber + " Destination="+ routeDestination);
     String endpoint = String(OCTRANSPO_API_NEXT_TRIPS_FOR_STOP_ENDPOINT);
     endpoint += "&stopNo=" + stopNumber + "&routeNo=" + routeNumber;
 
@@ -39,34 +38,31 @@ void OCTranspoAPI::fetchTripsFor(const String& stopNumber, const String& routeNu
         //  - OC Server went down. Endpoints returned HTTP 200 OK but instead of JSON
         //    we got "<h4>A PHP Error was encountered</h4>" HTML nonsense!
         if(doc.containsKey("GetNextTripsForStopResult")) {
-            JsonArray tripsJson = doc["GetNextTripsForStopResult"]["Route"]["RouteDirection"]["Trips"]["Trip"];
 
-        
-            std::vector<std::tuple<String, int, bool, TripArrivalLocation>> flatTrips;
-            for (JsonObject tripJson: tripsJson) {
-                // String out = "";
-                // serializeJsonPretty(trip, out);
-                // Serial.println(out);
-                int arrivalTime = tripJson["AdjustedScheduleTime"].as<int>();
-                if(arrivalTime > OCTRANSPO_API_MAX_ARRIVAL_TIME_MINUTES || arrivalTime < OCTRANSPO_API_MIN_ARRIVAL_TIME_MINUTES) {
-                    // Serial.print("OCT-API: Removed trip with extreme arrivalTime = ");
-                    // Serial.println(arrivalTime);
-                    continue;
+            // Sometimes there's ONE physical Stop for both directions of a Route
+            // In these cases "RouteDirection" is an array, so we need to differentiate Routes using "RouteLabel"
+            if(doc["GetNextTripsForStopResult"]["Route"]["RouteDirection"].is<JsonArray>()) {
+                boolean found = false;
+                JsonArray routeDirectionArray = doc["GetNextTripsForStopResult"]["Route"]["RouteDirection"].as<JsonArray>();
+                for (JsonObject routeDirectionJson: routeDirectionArray) {
+                    String routeLabel = routeDirectionJson["RouteLabel"].as<String>();
+                    if(routeLabel.indexOf(routeDestination) != -1) {
+                        JsonArray tripsJsonArray = routeDirectionJson["Trips"]["Trip"].as<JsonArray>();
+                        processTripsFor(tripsJsonArray, routeNumber, routeDestination);
+                        found = true;
+                        break;
+                    }
                 }
-                arrivalTime -= OCTRANSPO_API_MINUTES_TO_SUBTRACT_FROM_ARRIVAL_TIME;
-                String actualDestination = tripJson["TripDestination"];
-                bool arrivalIsEstimated = tripJson["AdjustmentAge"].as<float>() != -1 && tripJson["Longitude"] != "";
+                if (!found) {
+                    Serial.println("  OCTR-API: WARNING API returned 'RouteDirection' as an array. Could not find routeDestination containing '"+ routeDestination + "')");
+                }
 
-                TripArrivalLocation location = None;
-                if(routeNumber == "88" && stopNumber == "4483" && arrivalIsEstimated) {
-                    location = TooClose;
-                    if(tripJson["Longitude"].as<float>() < OCTRANSPO_API_88_HURDMAN_LONGITUDE_THRESHOLD_BUS_FAR_ENOUGH_AWAY)
-                        location = FarAwayEnough;
-                }
-                flatTrips.push_back(std::make_tuple(actualDestination, arrivalTime, arrivalIsEstimated, location));
+            // Usually, there's different physical Stops (one on each side of the road) for the two directions of a Route
+            // In this case, "RouteDirection" returns one object.
+            } else {
+                JsonArray tripsJsonArray = doc["GetNextTripsForStopResult"]["Route"]["RouteDirection"]["Trips"]["Trip"].as<JsonArray>();
+                processTripsFor(tripsJsonArray, routeNumber, routeDestination);
             }
-
-            _routes->replaceTripsForRoute(routeNumber, routeDestination, flatTrips);
         } else {
             Serial.println("  OCTR-API: WARNING API returned INVALID JSON");
         }
@@ -74,5 +70,34 @@ void OCTranspoAPI::fetchTripsFor(const String& stopNumber, const String& routeNu
         Serial.println("  OCTR-API: WARNING API returned NOT OK code ("+ String(httpCode) + ")");
     }
     _httpClient->end();
+}
+
+
+void OCTranspoAPI::processTripsFor(const JsonArray tripsJson, const String& routeNumber, const String& routeDestination) {
+    std::vector<std::tuple<String, int, bool, TripArrivalLocation>> flatTrips;
+    for (JsonObject tripJson: tripsJson) {
+        // String out = "";
+        // serializeJsonPretty(trip, out);
+        // Serial.println(out);
+        int arrivalTime = tripJson["AdjustedScheduleTime"].as<int>();
+        if(arrivalTime > OCTRANSPO_API_MAX_ARRIVAL_TIME_MINUTES || arrivalTime < OCTRANSPO_API_MIN_ARRIVAL_TIME_MINUTES) {
+            // Serial.print("OCT-API: Removed trip with extreme arrivalTime = ");
+            // Serial.println(arrivalTime);
+            continue;
+        }
+        arrivalTime -= OCTRANSPO_API_MINUTES_TO_SUBTRACT_FROM_ARRIVAL_TIME;
+        String actualDestination = tripJson["TripDestination"];
+        bool arrivalIsEstimated = tripJson["AdjustmentAge"].as<float>() != -1 && tripJson["Longitude"] != "";
+
+        TripArrivalLocation location = None;
+        // if(routeNumber == "88" && stopNumber == "4483" && arrivalIsEstimated) {
+        //     location = TooClose;
+        //     if(tripJson["Longitude"].as<float>() < OCTRANSPO_API_88_HURDMAN_LONGITUDE_THRESHOLD_BUS_FAR_ENOUGH_AWAY)
+        //         location = FarAwayEnough;
+        // }
+        flatTrips.push_back(std::make_tuple(actualDestination, arrivalTime, arrivalIsEstimated, location));
+    }
+
+    _routes->replaceTripsForRoute(routeNumber, routeDestination, flatTrips);
 }
 

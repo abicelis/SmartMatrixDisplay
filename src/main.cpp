@@ -217,7 +217,12 @@ void loop() {
                 Serial.println("      MAIN: State is WeatherPage");
                 UIForecast uiForecast = forecast.getUIForecast();
                 pageRenderer.drawWeatherPage(uiForecast, currentTime);
-            } else if(appState == NorthSouthPage) {
+            } else if(appState == TranspoPage) {
+                Serial.println("      MAIN: State is TranspoPage");
+                std::vector<UITrip> uiTrips = routes.getSortedUITrips();
+                pageRenderer.drawTripsPage(uiTrips, appState, currentTime);
+            }  
+            else if(appState == NorthSouthPage) {
                 Serial.println("      MAIN: State is NorthSouthPage");
                 std::vector<UITrip> uiTrips = routes.getSortedUITripsByDirection(NorthSouth);
                 pageRenderer.drawTripsPage(uiTrips, appState, currentTime);

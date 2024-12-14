@@ -62,7 +62,7 @@ String hourNumericToPretty(uint8_t hour) {
 
 
 bool inAContentPage(AppState& appState) {
-    return appState == CommutePage || appState == NorthSouthPage || appState == EastWestPage || appState == WeatherPage;
+    return appState == CommutePage || appState == TranspoPage || appState == NorthSouthPage || appState == EastWestPage || appState == WeatherPage;
 }
 
 bool inAContentPageOrWakingUp(AppState& appState) {
@@ -95,15 +95,23 @@ void updateAppState(AppState& appState) {
         Serial.println(" is CommutePage");
         appState = CommutePage;
     } else if (hour >= APPSTATE_NORMAL_HOUR_START && hour < APPSTATE_SLEEPING_HOUR_START) {
-        if(appState == NorthSouthPage) {
-            Serial.println(" is EastWestPage");
-            appState = EastWestPage;
-        } else if(appState == EastWestPage) {
+        // if(appState == NorthSouthPage) {
+        //     Serial.println(" is EastWestPage");
+        //     appState = EastWestPage;
+        // } else if(appState == EastWestPage) {
+        //     Serial.println(" is WeatherPage");
+        //     appState = WeatherPage;
+        // } else if(appState == WeatherPage) {
+        //     Serial.println(" is NorthSouthPage");
+        //     appState = NorthSouthPage;
+        // }
+
+        if(appState == TranspoPage) {
             Serial.println(" is WeatherPage");
             appState = WeatherPage;
         } else {
-            Serial.println(" is NorthSouthPage");
-            appState = NorthSouthPage;
+            Serial.println(" is TranspoPage");
+            appState = TranspoPage;
         }
     } else if (hour == APPSTATE_SLEEPING_HOUR_START) {
         Serial.println(" is Sleeping");
@@ -137,6 +145,8 @@ String appStateToString(AppState appState) {
         return "WakingUp";
     } else if(appState == CommutePage) {
         return "CommutePage";
+    } else if(appState == TranspoPage) {
+        return "TranspoPage";
     } else if(appState == NorthSouthPage) {
         return "NorthSouthPage";
     } else if(appState == EastWestPage) {

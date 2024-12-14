@@ -2,6 +2,7 @@
 #define OCTranspoAPI_h
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
+#include <ArduinoJson.h>
 #include "octranspo/Routes.h"
 
 class OCTranspoAPI {
@@ -13,5 +14,6 @@ class OCTranspoAPI {
         HTTPClient* _httpClient;
         Routes* _routes;
         void fetchTripsFor(const String& stopNumber, const String& routeNumber, const String& routeDestination);
+        void processTripsFor(const JsonArray tripsJson, const String& routeNumber, const String& routeDestination);
 };
 #endif

@@ -181,7 +181,9 @@ void PageRenderer::drawTripsPage(std::vector<UITrip>& trips, AppState appState, 
     _display->_dma_display->drawRGBBitmap(TRIPS_PAGE_ICON_X_POSITION, TRIPS_PAGE_ICON_Y_POSITION, icon_OCTranspoLogo, 9, 9);
 
     // Draw Title
-    if(appState == NorthSouthPage) {
+    if(appState == TranspoPage) {
+        _display->drawText(TRIPS_PAGE_TITLE_X_POSITION, TRIPS_PAGE_TITLE_Y_POSITION, "OC Transpo");
+    } else if(appState == NorthSouthPage) {
         _display->drawText(TRIPS_PAGE_TITLE_X_POSITION, TRIPS_PAGE_TITLE_Y_POSITION, "North-South");
     } else if(appState == EastWestPage) {
         _display->drawText(TRIPS_PAGE_TITLE_X_POSITION, TRIPS_PAGE_TITLE_Y_POSITION, "East-West");

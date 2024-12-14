@@ -10,12 +10,17 @@
 class Routes {
 public:
     Routes() {
-        routes.push_back(Route::route_88_Hurdman());
-        routes.push_back(Route::route_88_TerryFox());
-        routes.push_back(Route::route_80_TunneysPasture());
-        routes.push_back(Route::route_80_BarrhavenCentre());
-        routes.push_back(Route::route_81_TunneysPasture());
-        routes.push_back(Route::route_81_Clyde());
+        routes.push_back(Route::route_74_TunneysPasture());
+        routes.push_back(Route::route_74_Riverview());
+        routes.push_back(Route::route_75_TunneysPasture());
+        routes.push_back(Route::route_75_BarrhavenCentre());
+
+        // routes.push_back(Route::route_88_Hurdman());
+        // routes.push_back(Route::route_88_TerryFox());
+        // routes.push_back(Route::route_80_TunneysPasture());
+        // routes.push_back(Route::route_80_BarrhavenCentre());
+        // routes.push_back(Route::route_81_TunneysPasture());
+        // routes.push_back(Route::route_81_Clyde());
     }
     void replaceTripsForRoute(const String& routeNumber, const String& routeDestination, 
         std::vector<std::tuple<String, int, bool, TripArrivalLocation>> flatTrips) {
@@ -51,6 +56,18 @@ public:
             if(route.direction == direction)
                 for (const auto& trip: route.trips)
                     uiTrips.push_back(UITrip(route.number, route.type, trip.actualDestination, trip.arrivals));
+        sortTrips(uiTrips);
+        xSemaphoreGive(mutex);
+        
+        return uiTrips;
+    }
+
+    std::vector<UITrip> getSortedUITrips() {
+        xSemaphoreTake(mutex, portMAX_DELAY);
+        std::vector<UITrip> uiTrips;
+        for (const auto& route: routes)
+            for (const auto& trip: route.trips)
+                uiTrips.push_back(UITrip(route.number, route.type, trip.actualDestination, trip.arrivals));
         sortTrips(uiTrips);
         xSemaphoreGive(mutex);
         
