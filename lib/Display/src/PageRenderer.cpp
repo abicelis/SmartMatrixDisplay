@@ -705,9 +705,10 @@ void PageRenderer::drawVerticalBar(uint8_t x, uint8_t y, uint8_t width, uint8_t 
 
 String PageRenderer::shortenRouteDestination(const String& label) {
     String out = String(label);
+    out.replace("Pasture & Gatineau & N Rideau", "P");
     out.replace("Pasture", "P");
     out.replace("Centre", "");
-    out.replace("Auriga", "A");
+    // out.replace("Auriga", "A");
     return out;
 }
 
