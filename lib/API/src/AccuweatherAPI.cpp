@@ -71,8 +71,8 @@ void AccuweatherAPI::fetchForecast() {
 
             extractHourlyConditionForHour(doc[0].as<JsonVariant>(), newHourlyConditions, clockHour+1);
             extractHourlyConditionForHour(doc[1].as<JsonVariant>(), newHourlyConditions, clockHour+2);
-            int fivePmHour = 17;
-            extractHourlyConditionForHour(doc[fivePmHour-clockHour].as<JsonVariant>(), newHourlyConditions, fivePmHour);
+            int threePmHour = 15;
+            extractHourlyConditionForHour(doc[threePmHour-clockHour].as<JsonVariant>(), newHourlyConditions, threePmHour);
             _httpClient->end();
         } else {
             Serial.println("ACCUWE-API: ERROR 12H forecast API returned NOT OK code ("+ String(httpCode) + ")");

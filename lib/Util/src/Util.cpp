@@ -91,7 +91,7 @@ void updateAppState(AppState& appState) {
     if(hour == APPSTATE_WAKING_UP_HOUR_START && minute >= APPSTATE_WAKING_UP_MINUTE_START) {
         Serial.println(" is WakingUp");
         appState = WakingUp;
-    } else if (hour == APPSTATE_COMMUTE_HOUR_START) {
+    } else if (hour >= APPSTATE_COMMUTE_HOUR_START && hour < APPSTATE_NORMAL_HOUR_START) {
         Serial.println(" is CommutePage");
         appState = CommutePage;
     } else if (hour >= APPSTATE_NORMAL_HOUR_START && hour < APPSTATE_SLEEPING_HOUR_START) {

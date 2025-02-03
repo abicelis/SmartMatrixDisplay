@@ -81,7 +81,7 @@ public:
         UITrip* localTrip = nullptr;
         xSemaphoreTake(mutex, portMAX_DELAY);
         for (const auto& route: routes) {
-            if(route.number == "88" && route.destination == "Hurdman") {
+            if(route.number == "75" && route.destination == "Tunney's Pasture") {
                 Serial.println("evaling " + String(route.number) + String(route.destination) );
                 // route 88 Hurdman should always have one trip, it's always 88 Hurdman.    
                 localTrip = new UITrip(route.number, route.type, route.trips[0].actualDestination, route.trips[0].arrivals);
