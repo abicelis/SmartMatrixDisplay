@@ -27,14 +27,14 @@ public:
         this->lastUpdateMillis = millis();   // We cheat a little
     }
 
-    static Route route_74_TunneysPasture() { return Route("74", "Tunney's Pasture", "1108", FrequentRoute, NorthSouth); }
-    static Route route_74_Riverview() { return Route("74", "Riverview", "1094", FrequentRoute, NorthSouth); }
+    // static Route route_74_TunneysPasture() { return Route("74", "Tunney's Pasture", "1108", FrequentRoute, NorthSouth); }
+    // static Route route_74_Riverview() { return Route("74", "Riverview", "1094", FrequentRoute, NorthSouth); }
     
-    static Route route_75_TunneysPasture() { return Route("75", "Tunney's Pasture", "3046", FrequentRoute, NorthSouth); }
-    static Route route_75_BarrhavenCentre() { return Route("75", "Barrhaven Centre", "3046", FrequentRoute, NorthSouth); }
+    // static Route route_75_TunneysPasture() { return Route("75", "Tunney's Pasture", "3046", FrequentRoute, NorthSouth); }
+    // static Route route_75_BarrhavenCentre() { return Route("75", "Barrhaven Centre", "3046", FrequentRoute, NorthSouth); }
 
-    // static Route route_88_Hurdman() { return Route("88", "Hurdman", "4483", FrequentRoute, EastWest); }
-    // static Route route_88_TerryFox() { return Route("88", "Terry Fox", "4491", FrequentRoute, EastWest); }
+    static Route route_88_Hurdman() { return Route("88", "Hurdman", "4483", FrequentRoute, EastWest); }
+    static Route route_88_TerryFox() { return Route("88", "Terry Fox", "4491", FrequentRoute, EastWest); }
     
     // static Route route_80_TunneysPasture() { return Route("80", "Tunney's Pasture", "1267", FrequentRoute, NorthSouth); }
     // static Route route_80_BarrhavenCentre() { return Route("80", "Barrhaven Centre", "2491", FrequentRoute, NorthSouth); }

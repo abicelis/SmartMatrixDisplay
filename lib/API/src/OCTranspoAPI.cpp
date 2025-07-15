@@ -3,6 +3,8 @@
 #include <vector>
 #include <Config.h>
 #include "OCTranspoAPI.h"
+#include <cstdlib>
+#include <ctime>
 
 OCTranspoAPI::OCTranspoAPI(WiFiClientSecure* wifiClient, HTTPClient* httpClient, Routes* routes) {
     _wifiClient = wifiClient;
@@ -12,11 +14,34 @@ OCTranspoAPI::OCTranspoAPI(WiFiClientSecure* wifiClient, HTTPClient* httpClient,
 
 void OCTranspoAPI::fetchRoutes(bool doItQuickly) {    
     for (const auto &route : _routes->routes) {
-        if(!doItQuickly)
-            vTaskDelay(pdMS_TO_TICKS(OCTRANSPO_DELAY_BETWEEN_FETCHES_MS));
-        else
-            vTaskDelay(pdMS_TO_TICKS(500));
-        fetchTripsFor(route.stopNumber, route.number, route.destination);
+        // if(!doItQuickly)
+        //     vTaskDelay(pdMS_TO_TICKS(OCTRANSPO_DELAY_BETWEEN_FETCHES_MS));
+        // else
+        //     vTaskDelay(pdMS_TO_TICKS(500));
+        // fetchTripsFor(route.stopNumber, route.number, route.destination);
+
+        
+
+        JsonDocument doc;
+        if(route.destination == "Hurdman") {
+            // Nostalgia
+            std::srand(std::time(nullptr));      // Seed with current time
+            int trip1 = 4 + std::rand() % 6;     // Range: [4, 9]
+            int trip2 = 12 + std::rand() % 24;   // Range: [12, 35]
+            std::string json = "[{'AdjustedScheduleTime':"+ std::to_string(trip1)+",'TripDestination':'Hurdman','AdjustmentAge':1.0,'Longitude':'123'},{'AdjustedScheduleTime':"+ std::to_string(trip2)+",'TripDestination':'Hurdman','AdjustmentAge':-1,'Longitude':''}]";
+            //deserializeJson(doc, "[{'AdjustedScheduleTime':8,'TripDestination':'Hurdman','AdjustmentAge':1.0,'Longitude':'123'},{'AdjustedScheduleTime':15,'TripDestination':'Hurdman','AdjustmentAge':-1,'Longitude':''}]");
+            deserializeJson(doc, json);
+        } else { // Terry Fox
+            // Nostalgia
+            std::srand(std::time(nullptr));      // Seed with current time
+            int trip1 = 4 + std::rand() % 6;     // Range: [4, 9]
+            int trip2 = 12 + std::rand() % 13;   // Range: [12, 24]
+            int trip3 = 25 + std::rand() % 11;   // Range: [25, 35]
+            std::string json = "[{'AdjustedScheduleTime':"+ std::to_string(trip1)+",'TripDestination':'Terry Fox','AdjustmentAge':1.0,'Longitude':'123'},{'AdjustedScheduleTime':"+ std::to_string(trip2)+",'TripDestination':'Terry Fox','AdjustmentAge':1.0,'Longitude':'123'},{'AdjustedScheduleTime':"+ std::to_string(trip3)+",'TripDestination':'Terry Fox','AdjustmentAge':-1,'Longitude':''}]";
+            deserializeJson(doc, json);
+        }
+        JsonArray jsonArray = doc.as<JsonArray>();
+        processTripsFor(jsonArray, route.number, route.destination);
     }
     _routes->printRoutes();
 }

@@ -32,6 +32,11 @@ class DataFetcher {
             DataFetcher *_this = (DataFetcher *) pvParameters;   
             while(true) {
                 if(inAContentPageOrWakingUp(*_this->_appState)) {
+
+                    // Jul 2025: OCTranspo API is gone so we mock it for nostalgia :( 
+                    // Adding a delay here to prevent hitting OpenMeteo too frequently
+                    vTaskDelay(pdMS_TO_TICKS(45000)); 
+
                     // Serial.println("------- HEAP MEM fetchRoutes.   HEAP= " + String(xPortGetFreeHeapSize()) + " HWM=" + String(uxTaskGetStackHighWaterMark(_this->taskHandle)));
                     _this->_ocTranspoAPI->fetchRoutes(false);
 

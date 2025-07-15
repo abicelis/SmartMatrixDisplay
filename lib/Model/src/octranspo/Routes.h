@@ -10,13 +10,13 @@
 class Routes {
 public:
     Routes() {
-        routes.push_back(Route::route_74_TunneysPasture());
-        routes.push_back(Route::route_74_Riverview());
-        routes.push_back(Route::route_75_TunneysPasture());
-        routes.push_back(Route::route_75_BarrhavenCentre());
+        // routes.push_back(Route::route_74_TunneysPasture());
+        // routes.push_back(Route::route_74_Riverview());
+        // routes.push_back(Route::route_75_TunneysPasture());
+        // routes.push_back(Route::route_75_BarrhavenCentre());
 
-        // routes.push_back(Route::route_88_Hurdman());
-        // routes.push_back(Route::route_88_TerryFox());
+        routes.push_back(Route::route_88_Hurdman());
+        routes.push_back(Route::route_88_TerryFox());
         // routes.push_back(Route::route_80_TunneysPasture());
         // routes.push_back(Route::route_80_BarrhavenCentre());
         // routes.push_back(Route::route_81_TunneysPasture());
@@ -81,11 +81,9 @@ public:
         UITrip* localTrip = nullptr;
         xSemaphoreTake(mutex, portMAX_DELAY);
         for (const auto& route: routes) {
-            if(route.number == "75" && route.destination == "Tunney's Pasture") {
-                Serial.println("evaling " + String(route.number) + String(route.destination) );
+            if(route.number == "88" && route.destination == "Hurdman") {
                 // route 88 Hurdman should always have one trip, it's always 88 Hurdman.    
                 localTrip = new UITrip(route.number, route.type, route.trips[0].actualDestination, route.trips[0].arrivals);
-                
             }
         }
         xSemaphoreGive(mutex);
